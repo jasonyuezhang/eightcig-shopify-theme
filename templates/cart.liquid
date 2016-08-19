@@ -1,11 +1,6 @@
 {% comment %}
 
-  This is your /cart template. If you are using the Ajaxify Cart plugin,
-  your form (with action="/cart") layout will be used in the drawer/modal.
-
-  For info on test orders:
-    - General http://docs.shopify.com/manual/your-store/orders/test-orders
-    - Shopify Payments - http://docs.shopify.com/manual/more/shopify-payments/testing-shopify-payments
+  This is your /cart template.
 
 {% endcomment %}
 {% if cart.item_count > 0 %}
@@ -38,7 +33,7 @@
       Loop through products in the cart
     {% endcomment %}
     {% for item in cart.items %}
-      <div class="cart__row" data-id="{{ item.id }}">
+      <div class="cart__row">
         <div class="grid--full cart__row--table-large">
 
           <div class="grid__item large--one-half">
@@ -56,7 +51,7 @@
               </div>
 
               <div class="grid__item two-thirds">
-                <a href="{{ item.url }}" class="h4">
+                <a href="{{ item.url }}" class="h5">
                   {{ item.product.title }}
                 </a>
                 {% unless item.variant.title contains 'Default' %}
@@ -64,9 +59,9 @@
                   <small>{{ item.variant.title }}</small>
                 {% endunless %}
 
-                {% if settings.cart_vendor_enable %}
+                {% comment %}
                   <p>{{ item.vendor }}</p>
-                {% endif %}
+                {% endcomment %}
 
                 {% comment %}
                   Optional, loop through custom product line items if available
@@ -74,9 +69,12 @@
                   For more info on line item properties, visit:
                     - http://docs.shopify.com/support/your-store/products/how-do-I-collect-additional-information-on-the-product-page-Like-for-a-monogram-engraving-or-customization
                 {% endcomment %}
-                {% if item.properties.size > 0 %}
+                {% assign propertySize = item.properties | size %}
+                {% if propertySize > 0 %}
                   {% for p in item.properties %}
-                    {% unless p.last == blank %}
+                    {% assign first_character_in_key = p.first | truncate: 1, '' %}
+                    {% unless p.last == blank or first_character_in_key == '_' %}
+                      <br>
                       {{ p.first }}:
 
                       {% comment %}
@@ -88,12 +86,11 @@
                         {{ p.last }}
                       {% endif %}
 
-                      <br>
                     {% endunless %}
                   {% endfor %}
                 {% endif %}
 
-                <a href="/cart/change?line={{ forloop.index }}&amp;quantity=0" data-id="{{ item.id }}" class="cart__remove">
+                <a href="/cart/change?line={{ forloop.index }}&amp;quantity=0" class="cart__remove">
                   <small>{{ 'cart.general.remove' | t }}</small>
                 </a>
               </div>
@@ -110,16 +107,25 @@
               </div>
 
               <div class="grid__item one-third text-center">
-                <span class="cart__mini-labels">{{ 'cart.label.quantity' | t }}</span>
-                {% comment %}
-                  Added data-id for the ajax cart implementation only.
-                {% endcomment %}
-                <input type="number" name="updates[]" id="updates_{{ item.id }}" value="{{ item.quantity }}" min="0" data-id="{{ item.id }}">
+                <label for="updates_{{ item.key }}" class="cart__mini-labels">{{ 'cart.label.quantity' | t }}</label>
+                <input type="number" class="cart__quantity-selector" name="updates[]" id="updates_{{ item.key }}" value="{{ item.quantity }}" min="0" aria-label="{{ 'cart.label.quantity' | t }}">
               </div>
 
               <div class="grid__item one-third text-right">
                 <span class="cart__mini-labels">{{ 'cart.label.total' | t }}</span>
-                <span class="h5">{{ item.line_price | money }}</span>
+                <span class="h5">
+                  {% if item.original_line_price != item.line_price %}
+                    <small class="cart-item__original-price"><s>{{ item.original_line_price | money }}</s></small>
+                  {% endif %}
+                  {{ item.line_price | money }}
+                </span>
+                {% if item.original_line_price != item.line_price %}
+                  {% for discount in item.discounts %}
+                    <small class="cart-item__discount">
+                      {{ discount.title }}
+                    </small>
+                  {% endfor %}
+                {% endif %}
               </div>
 
             </div>
@@ -152,10 +158,14 @@
           <p>
             <span class="cart__subtotal-title">{{ 'cart.general.subtotal' | t }}</span>
             <span class="h5 cart__subtotal">{{ cart.total_price | money }}</span>
+            {% if cart.total_discounts > 0 %}
+              {% assign savings = cart.total_discounts | money %}
+              <small class="cart-subtotal__savings">{{ 'cart.general.savings_html' | t: price: savings }}</small>
+            {% endif %}
           </p>
           <p><em>{{ 'cart.general.shipping_at_checkout' | t }}</em></p>
-          <input type="submit" name="update" class="btn--secondary update-cart" value="{{ 'cart.general.update' | t }}">
-          <input type="submit" name="checkout" class="btn" value="{{ 'cart.general.checkout' | t }}">
+          <button type="submit" name="update" class="btn--secondary update-cart">{{ 'cart.general.update' | t }}</button>
+          <button type="submit" name="checkout" class="btn checkout">{{ 'cart.general.checkout' | t }}</button>
 
           {% if additional_checkout_buttons %}
             <div class="cart__additional_checkout">{{ content_for_additional_checkout_buttons }}</div>

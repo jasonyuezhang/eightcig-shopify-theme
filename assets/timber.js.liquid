@@ -20,9 +20,6 @@ timber.cacheSelectors = function () {
     // Navigation
     $navigation: $('#AccessibleNav'),
 
-    // Collection Pages
-    $changeView: $('.change-view'),
-
     // Product Page
     $productImageWrap: $('#ProductPhoto'),
     $productImage: $('#ProductPhotoImg'),
@@ -36,7 +33,6 @@ timber.init = function () {
   timber.accessibleNav();
   timber.productImageSwitch();
   timber.autoResponsiveElements();
-  timber.collectionViews();
   timber.productImageZoom();
 };
 
@@ -122,7 +118,8 @@ timber.accessibleNav = function () {
 timber.productPage = function (options) {
   var moneyFormat = options.money_format,
       variant = options.variant,
-      selector = options.selector;
+      selector = options.selector,
+      translations = options.translations;
 
   // Selectors
   var $productImage = $('#ProductPhotoImg'),
@@ -145,12 +142,12 @@ timber.productPage = function (options) {
     if (variant.available) {
       // Available, enable the submit button, change text, show quantity elements
       $addToCart.removeClass('disabled').prop('disabled', false);
-      $addToCartText.html({{ 'products.product.add_to_cart' | t | json }});
+      $addToCartText.html(translations.add_to_cart);
       $quantityElements.show();
     } else {
       // Sold out, disable the submit button, change text, hide quantity elements
       $addToCart.addClass('disabled').prop('disabled', true);
-      $addToCartText.html({{ 'products.product.sold_out' | t | json }});
+      $addToCartText.html(translations.sold_out);
       $quantityElements.hide();
     }
 
@@ -172,7 +169,7 @@ timber.productPage = function (options) {
     // To only show available variants, implement linked product options:
     //   - http://docs.shopify.com/manual/configuration/store-customization/advanced-navigation/linked-product-options
     $addToCart.addClass('disabled').prop('disabled', true);
-    $addToCartText.html({{ 'products.product.unavailable' | t | json }});
+    $addToCartText.html(translations.unavailable);
     $quantityElements.hide();
   }
 };
@@ -184,7 +181,8 @@ timber.productImageSwitch = function () {
     timber.cache.$thumbImages.on('click', function(evt) {
       evt.preventDefault();
       var newImage = $(this).attr('href');
-      timber.switchImage(newImage, null, timber.cache.$productImage);
+      var newImageId = $(this).attr('data-image-id');
+      timber.switchImage(newImage, { id: newImageId }, timber.cache.$productImage);
     });
   }
 };
@@ -193,10 +191,11 @@ timber.switchImage = function (src, imgObject, el) {
   // Make sure element is a jquery object
   var $el = $(el);
   $el.attr('src', src);
+  $el.attr('data-image-id', imgObject.id);
 
-  {% if settings.product_image_zoom_enable %}
+  {% if settings.product_image_zoom_type == 'zoom-in' %}
     // Update new image src to grande
-    var zoomSrc = src.replace('_medium','_1024x1024').replace('_large','_1024x1024');
+    var zoomSrc = src.replace('_medium.','_1024x1024.').replace('_large.','_1024x1024.').replace('_grande.','_1024x1024.');
     $el.attr('data-zoom', zoomSrc);
 
     $(function() {
@@ -206,38 +205,29 @@ timber.switchImage = function (src, imgObject, el) {
 };
 
 timber.autoResponsiveElements = function () {
-  $('iframe[src*="youtube.com/embed"]').wrap('<div class="video-wrapper"></div>');
-  $('iframe[src*="player.vimeo"]').wrap('<div class="video-wrapper"></div>');
+  var $iframeVideo = $('iframe[src*="youtube.com/embed"], iframe[src*="player.vimeo"]');
+  var $iframeReset = $iframeVideo.add('iframe#admin_bar_iframe');
+
   $('table').wrap('<div class="table-wrapper"></div>');
-  
-  // Re-set the src attribute on each iframe after page load
-  // for Chrome's "incorrect iFrame content on 'back'" bug.
-  // https://code.google.com/p/chromium/issues/detail?id=395791
-  $('iframe').each(function() {
+
+  $iframeVideo.each(function () {
+    // Add wrapper to make video responsive
+    $(this).wrap('<div class="video-wrapper"></div>');
+  });
+
+  $iframeReset.each(function () {
+    // Re-set the src attribute on each iframe after page load
+    // for Chrome's "incorrect iFrame content on 'back'" bug.
+    // https://code.google.com/p/chromium/issues/detail?id=395791
+    // Need to specifically target video and admin bar
     this.src = this.src;
   });
 };
 
-timber.collectionViews = function () {
-  if (timber.cache.$changeView.length) {
-    timber.cache.$changeView.on('click', function() {
-      var view = $(this).data('view'),
-          url = document.URL,
-          hasParams = url.indexOf('?') > -1;
-
-      if (hasParams) {
-        window.location = replaceUrlParam(url, 'view', view);
-      } else {
-        window.location = url + '?view=' + view;
-      }
-    });
-  }
-};
-
 timber.productImageZoom = function () {
-  {% unless settings.product_image_zoom_enable %}
+  {% if settings.product_image_zoom_type != 'zoom-in' %}
     return;
-  {% endunless %}
+  {% endif %}
 
   if (!timber.cache.$productImageWrap.length || timber.cache.$html.hasClass('supports-touch')) {
     return;

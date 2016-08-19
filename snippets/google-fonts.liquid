@@ -10,3 +10,10 @@
     {{ '//fonts.googleapis.com/css?family=' | append: headerGoogleUrl | stylesheet_tag }}
   {% endunless %}
 {% endif %}
+{% if settings.type_accent_family contains 'Google' %}
+  {% unless settings.type_accent_family contains type_base_parts[1] %}
+    {% assign type_accent_parts = settings.type_accent_family | split: '_' %}
+    {% capture headerGoogleUrl %}{{ type_accent_parts[1] }}:{{ type_accent_parts[2] }}{% endcapture %}
+    {{ '//fonts.googleapis.com/css?family=' | append: headerGoogleUrl | stylesheet_tag }}
+  {% endunless %}
+{% endif %}

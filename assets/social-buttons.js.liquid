@@ -22,7 +22,6 @@ timberSocial.socialSharing = function () {
 
   // Share button selectors
   var $fbLink = $('.share-facebook'),
-      $twitLink = $('.share-twitter'),
       $pinLink = $('.share-pinterest'),
       $googleLink = $('.share-google');
 
@@ -32,16 +31,6 @@ timberSocial.socialSharing = function () {
         $fbLink.find('.share-count').text(data.shares).addClass('is-loaded');
       } else {
         $fbLink.find('.share-count').remove();
-      }
-    });
-  };
-
-  if ( $twitLink.length ) {
-    $.getJSON('https://cdn.api.twitter.com/1/urls/count.json?url=' + permalink + '&callback=?', function(data) {
-      if (data.count > 0) {
-        $twitLink.find('.share-count').text(data.count).addClass('is-loaded');
-      } else {
-        $twitLink.find('.share-count').remove();
       }
     });
   };
@@ -72,9 +61,6 @@ timberSocial.socialSharing = function () {
 
     // Set popup sizes
     switch (popup) {
-      case 'share-twitter':
-        h = 300;
-        break;
       case 'share-fancy':
         w = 480;
         h = 720;
@@ -89,5 +75,5 @@ timberSocial.socialSharing = function () {
 }
 
 {% if settings.social_sharing_products or settings.social_sharing_blog %}
-$(timberSocial.socialSharing)
+  $(timberSocial.socialSharing)
 {% endif %}

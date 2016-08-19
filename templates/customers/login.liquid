@@ -37,11 +37,9 @@
         <p>
           <input type="submit" class="btn" value="{{ 'customer.login.sign_in' | t }}">
         </p>
-        {% if shop.customer_accounts_optional %}
-          <p>
-            {{ 'layout.customer.create_account' | t | customer_register_link }}
-          </p>
-        {% endif %}
+        <p>
+          {{ 'layout.customer.create_account' | t | customer_register_link }}
+        </p>
         <a href="{{ shop.url }}">{{ 'customer.login.cancel' | t }}</a>
 
       {% endform %}

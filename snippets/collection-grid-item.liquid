@@ -3,13 +3,13 @@
 {% endunless %}
 
 {% unless collection_item_img_size %}
-  {% assign collection_item_img_size = 'medium' %}
+  {% assign collection_item_img_size = 'grande' %}
 {% endunless %}
 
 <div class="grid__item {{collection_item_width}} text-center">
   {% capture collection_title %}{{ collections[featured].title | escape }}{% endcapture %}
 
-  <a href="{{ collections[featured].url }}" title="{{ 'collections.general.link_title' | t: title: collection_title }}" class="grid-link--focus">
+  <a href="{{ collections[featured].url }}" title="{{ 'collections.general.link_title' | t: title: collection_title }}" class="grid-link text-center">
     <span class="grid-link__image grid-link__image--collection">
       <span class="grid-link__image-centered">
         {% if collections[featured].image %}
@@ -20,9 +20,6 @@
       </span>
     </span>
     <p class="grid-link__title">{{ collections[featured].title }}</p>
-    {% if settings.home_featured_desc_enable %}
-      <p class="grid-link__meta"><small>{{ collections[featured].description | truncatewords: 20 | strip_html }}</small></p>
-    {% endif %}
   </a>
 
 </div>

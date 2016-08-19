@@ -8,13 +8,31 @@
       "title": "404 Seite nicht gefunden",
       "subtext_html": "Die von Ihnen angeforderte Seite existiert nicht. Klicken Sie <a href=\"/collections/all\">hier</a>, um den Einkauf fortzusetzen."
     },
+    "password_page": {
+      "opening_soon": "Eröffnet demnächst",
+      "spread_the_word": "Weitersagen:",
+      "login_form_heading": "Shop mit Passwort betreten:",
+      "login_form_password_label": "Passwort",
+      "login_form_password_placeholder": "Ihr Passwort",
+      "login_form_submit": "Betreten",
+      "signup_form_heading": "Finden Sie heraus, wann wir eröffnen:",
+      "signup_form_email_label": "E-Mail",
+      "signup_form_email_placeholder": "Ihre E-Mail-Adresse",
+      "signup_form_submit": "Abschicken",
+      "signup_form_success": "Wir senden Ihnen eine E-Mail, kurz bevor wir eröffnen!",
+      "admin_link_html": "Sind Sie der Geschäftsinhaber? <a href=\"/admin\" class=\"text-link\">Melden Sie sich hier an</a>",
+      "password_link": "Mit Passwort betreten",
+      "powered_by_shopify_html": "Dieser Shop wird mit Hilfe von {{ shopify }} betrieben werden",
+      "close": "Schließen (Esc)"
+    },
     "breadcrumbs": {
       "home": "Startseite",
       "home_link_title": "Zurück zur Startseite"
     },
     "newsletter_form": {
       "newsletter_email": "ihre-email@beispiel.com",
-      "submit": "Abonnieren"
+      "submit": "Abonnieren",
+      "confirmation": "Danke fürs Anmelden"
     },
     "search": {
       "no_results_html": "Ihre Suche nach \"{{ terms }}\" hat keine Ergebnisse hervorgebracht.",
@@ -26,8 +44,15 @@
     "social": {
       "share_on_facebook": "Teilen",
       "share_on_twitter": "Twittern",
-      "share_on_pinterest": "Pin it",
-      "share_on_fancy": "Fancy"
+      "share_on_pinterest": "Pinnen",
+      "share_on_fancy": "Zu Fancy hinzufügen",
+      "alt_text": {
+        "share_on_facebook": "Auf Facebook teilen",
+        "share_on_twitter": "Auf Twitter twittern",
+        "share_on_pinterest": "Auf Pinterest pinnen",
+        "share_on_fancy": "Zu Fancy hinzufügen",
+        "share_on_google": "+1 auf Google Plus"
+      }
     }
   },
   "blogs": {
@@ -47,6 +72,10 @@
       "moderated": "Bitte beachten Sie, dass Kommentare vor der Veröffentlichung freigegeben werden müssen",
       "success_moderated": "Ihr Kommentar wurde erfolgreich gepostet. Da unser Blog moderiert wird, werden wir ihn erst kurze Zeit später veröffentlichen.",
       "success": "Ihr Kommentar wurde erfolgreich gepostet. Danke!"
+    },
+    "sidebar": {
+      "recent_articles": "Neueste Artikel",
+      "categories": "Kategorien"
     }
   },
   "cart": {
@@ -55,13 +84,12 @@
       "remove": "Entfernen",
       "note": "Besondere Hinweise an den Verkäufer",
       "subtotal": "Zwischensumme",
-      "shipping_at_checkout": "Liefer- und Preisnachlässe an der Kasse berechnet",
+      "savings_html": "Sie sparen {{ price }}",
+      "shipping_at_checkout": "Rabattcodes, Versandkosten und Steuern werden bei der Bezahlung berechnet.",
       "update": "Einkaufswagen aktualisieren",
       "checkout": "Zur Kasse",
       "empty": "Ihr Einkaufswagen ist im Moment leer.",
-      "continue_browsing_html": "Mit der Suche <a href=\"/collections/all\">hier</a> fortfahren.",
-      "view_cart": "Einkaufswagen ansehen",
-      "close_cart": "Einkaufswagen schließen"
+      "continue_browsing_html": "Mit der Suche <a href=\"/collections/all\">hier</a> fortfahren."
     },
     "label": {
       "price": "Preis",
@@ -78,6 +106,7 @@
     },
     "sorting": {
       "title": "Sortieren nach",
+      "browse": "Durchsuchen",
       "all_tags": "Alle",
       "featured": "Ausgewählt",
       "best_selling": "Meistverkauft",
@@ -134,7 +163,8 @@
       "update": "Adresse aktualisieren",
       "cancel": "Abbrechen",
       "edit": "Bearbeiten",
-      "delete": "Löschen"
+      "delete": "Löschen",
+      "delete_confirm": "Sind Sie sicher, dass Sie diese Adresse löschen möchten?"
     },
     "login": {
       "title": "Login",
@@ -203,19 +233,14 @@
   "home_page": {
     "sections": {
       "frontpage_title": "Startseite-Zusammenstellung",
-      "frontpage_view_all": "Alle Artikel anzeigen",
-      "featured_title": "Ausgewählte Zusammenstellungen",
-      "featured_view_all": "Alle Zusammenstellungen anzeigen"
+      "view_product": "Artikel ansehen"
     },
     "onboarding": {
       "modal_title": "Fast fertig...",
-      "no_products_html": "Sie haben keine Artikel in Ihrer Startseiten-Zusammenstellung. Dieser Platzhalter verschwindet, wenn Sie <a href=\"/admin/collections?tutorial=Frontpage\">dieser Zusammenstellung einen Artikel hinzufügen</a>.",
+      "no_products_html": "Sie haben keine Artikel in Ihrer Startseiten-Zusammenstellung. Dieser Platzhalter verschwindet, wenn Sie <a href=\"/admin/collections?query=Frontpage\">dieser Zusammenstellung einen Artikel hinzufügen</a>.",
       "no_products_collection": "Es sind noch keine Produkte vorhanden, doch sobald Sie welche hinzufügen, werden sie hier angezeigt, ganz gleich, ob sie zu einer Kollektion gehören oder nicht.",
       "add_product": "Fügen Sie ein Produkt",
-      "product_title": "Beispielhafter Produkttitel",
-      "no_collections_html": "Sie haben hier keine Zusammenstellungen zum Anzeigen. <a href=\"/admin/custom_collections\">Fügen Sie ein paar Zusammenstellungen</a> zur Standard-Startseite hinzu.",
-      "add_collection": "Fügen Sie eine Sammlung",
-      "collection_title": "Beispielhafter Zusammenstellungstitel"
+      "product_title": "Beispielhafter Produkttitel"
     }
   },
   "layout": {
@@ -229,9 +254,11 @@
       "account": "Mein Account",
       "log_out": "Ausloggen",
       "log_in": "Einloggen",
-      "create_account": "Account erstellen"
+      "create_account": "Account erstellen",
+      "or": "oder"
     },
     "footer": {
+      "blog_title": "Neueste Nachrichten",
       "linklist_title": "Quick Links",
       "social_title": "Bleiben Sie auf dem Laufenden",
       "social_platform": "{{ name }} auf {{ platform }}",
@@ -239,23 +266,11 @@
       "newsletter_title": "Newsletter",
       "newsletter_caption": "Melden Sie sich für Werbeaktionen",
       "copyright": "Urheberrecht"
-    },
-    "sidebar": {
-      "shop_by_type": "Nach Produktart einkaufen",
-      "shop_by_vendor": "Nach Artikelverkäufer einkaufen",
-      "recent_articles": "Neueste Blog-Artikel",
-      "view_more": "Mehr ansehen",
-      "view_less": "Weniger ansehen"
-    },
-    "sidebar_onboarding": {
-      "shop_by_collection": "Nach Sammlung einkaufen",
-      "shop_by_collection_description_html": "<p>Verknüpfen Sie Ihre individuellen Sammlungen, indem Sie eine neue Linkliste im Bereich <strong>Navigation</strong> der Administration erstellen.</p> <p>Sie können sie dann hier anzeigen lassen, indem Sie Ihre neue Linkliste unter <strong>Customize Theme / Sidebar</strong> auswählen.</p>"
     }
   },
   "products": {
     "general": {
       "from_html": "Von {{ price }}",
-      "share_title": "Diesen Artikel teilen",
       "related_products_title": "Mehr aus dieser Sammlung"
     },
     "product": {
@@ -265,8 +280,13 @@
       "compare_at": "Vergleichen bei",
       "quantity": "Menge",
       "add_to_cart": "In den Einkaufswagen legen",
-      "description": "Beschreibung",
-      "reviews": "Bewertungen"
+      "view_cart": "Einkaufswagen ansehen",
+      "continue_shopping": "Weiter einkaufen"
+    },
+    "zoom": {
+      "next": "Nächste (Rechte Pfeiltaste)",
+      "prev": "Vorige (Linke Pfeiltaste)",
+      "close": "Schließen (Esc)"
     }
   },
   "gift_cards": {
@@ -278,7 +298,8 @@
       "active": "Läuft ab am {{ expiry }}",
       "redeem": "Nutzen Sie an der Kasse diesen Code, um Ihre Geschenkkarte einzulösen",
       "shop_link": "Einkauf beginnen",
-      "print": "Drucken"
+      "print": "Drucken",
+      "add_to_apple_wallet": "Hinzufügen zu Apple Wallet"
     }
   },
   "date_formats":{

@@ -1,27 +1,44 @@
-{% paginate collection.products by 20 %}
+{% assign products_per_row = settings.collections_products_per_row %}
+{% assign rows = settings.collections_rows %}
+{% assign total_products = products_per_row | times: rows %}
+
+{% paginate collection.products by total_products %}
+
+<div class="section-header section-header--breadcrumb">
+  {% include 'breadcrumb' %}
+</div>
 
 <header class="section-header section-header--large">
-  <h1 class="section-header__title section-header__title--left">{{ collection.title }}</h1>
+  <h1 class="section-header__title{% if settings.collections_tags_enable or settings.collections_sort_enable %} section-header__title--left{% endif %}">{{ collection.title }}</h1>
+  {% if settings.collections_tags_enable or settings.collections_sort_enable %}
   <div class="section-header__link--right">
+    {% if settings.collections_tags_enable %}
+      {% include 'collection-tags' %}
+    {% endif %}
     {% if settings.collections_sort_enable %}
       {% include 'collection-sorting' %}
     {% endif %}
-    {% if settings.collections_views_enable %}
-      {% include 'collection-views' %}
-    {% endif %}
   </div>
+  {% endif %}
 </header>
-
-{% if settings.collections_tags_enable %}
-  {% include 'collection-tags' %}
-{% endif %}
 
 {% if collection.description != blank %}
   <div class="rte rte--header">
     {{ collection.description }}
   </div>
-  <hr>
+  <hr class="hr--clear hr--small">
 {% endif %}
+
+{% case products_per_row %}
+  {% when '2' %}
+    {% assign grid_item_width = 'small--one-half medium--one-half large--one-half' %}
+  {% when '3' %}
+    {% assign grid_item_width = 'small--one-half medium--one-third large--one-third' %}
+  {% when '4' %}
+    {% assign grid_item_width = 'small--one-half medium--one-half large--one-quarter' %}
+  {% when '5' %}
+    {% assign grid_item_width = 'small--one-half medium--one-half large--one-fifth' %}
+{% endcase %}
 
 <div class="grid-uniform grid-link__container">
 
@@ -85,7 +102,7 @@
 </div>
 
 {% if paginate.pages > 1 %}
-  <hr>
+  <hr class="hr--clear">
 
   <div class="text-center">
     {% include 'pagination-custom' %}

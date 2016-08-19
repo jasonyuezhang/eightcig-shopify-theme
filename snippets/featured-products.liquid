@@ -3,31 +3,32 @@
 {% assign rows = settings.home_featured_products_row_num %}
 {% assign total_products = products_per_row | times: rows %}
 
-<div class="section-header section-header--large">
-  <h2 class="section-header__title--left section-header__title h4">
+{% if settings.home_featured_products_show_heading %}
+<div class="section-header section-header--small">
+  <h2 class="section-header__title">
     {% if featured == 'frontpage' %}
       {{ 'home_page.sections.frontpage_title' | t }}
     {% else %}
       {{ collections[featured].title | escape }}
     {% endif %}
   </h2>
-  <div class="section-header__link--right medium-down--hide">
-    <a href="/collections/all" title="{{ 'collections.general.link_title' | t: title: collection_title }}">{{ 'home_page.sections.frontpage_view_all' | t }}</a>
-  </div>
 </div>
+{% endif %}
 
 {% case products_per_row %}
+  {% when '2' %}
+    {% assign grid_item_width = 'small--one-half medium--one-half large--one-half' %}
   {% when '3' %}
-    {% assign grid_item_width = 'medium--one-third large--one-third' %}
+    {% assign grid_item_width = 'small--one-half medium--one-third large--one-third' %}
   {% when '4' %}
-    {% assign grid_item_width = 'medium-down--one-half large--one-quarter' %}
+    {% assign grid_item_width = 'small--one-half medium--one-half large--one-quarter' %}
   {% when '5' %}
-    {% assign grid_item_width = 'medium-down--one-half large--one-fifth' %}
+    {% assign grid_item_width = 'small--one-half medium--one-half large--one-fifth' %}
 {% endcase %}
 
-<div class="grid-uniform grid-link__container">
+<div class="grid-uniform">
 
-  {% for product in collections[featured].products | limit: total_products %}
+  {% for product in collections[featured].products limit: total_products %}
     {% include 'product-grid-item' %}
   {% else %}
     {% unless emptyState %}
@@ -76,6 +77,3 @@
   {% endfor %}
 
 </div>
-<small class="view-more">
-  <a href="/collections/all" title="{{ 'collections.general.link_title' | t: title: collection_title }}">{{ 'home_page.sections.frontpage_view_all' | t }}</a>
-</small>

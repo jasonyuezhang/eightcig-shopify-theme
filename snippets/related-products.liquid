@@ -13,8 +13,8 @@
 
 {% if collection and collection.products_count > 1 %}
   <hr class="hr--clear hr--small">
-  <div class="section-header section-header--large">
-    <h4 class="section-header__title">{{ 'products.general.related_products_title' | t }}</h4>
+  <div class="section-header section-header--medium">
+    <h2 class="h4 section-header__title">{{ 'products.general.related_products_title' | t }}</h2>
   </div>
   <div class="grid-uniform grid-link__container">
     {% assign current_product = product %}
@@ -24,7 +24,7 @@
         {% assign current_product_found = true %}
       {% else %}
         {% unless current_product_found == false and forloop.last %}
-          {% assign grid_item_width = 'one-quarter small--one-half' %}
+          {% assign grid_item_width = 'large--one-quarter medium--one-quarter small--one-half' %}
           {% include 'product-grid-item' %}
         {% endunless %}
       {% endif %}
