@@ -1,0 +1,65 @@
+<div class="header-bar">
+  <div class="wrapper medium-down--hide">
+    <div class="large--display-table">
+      <div class="header-bar__left large--display-table-cell">
+        {% if settings.header_message != blank %}
+          <div class="header-bar__module header-bar__message">
+            {{ settings.header_message }}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="header-bar__right large--display-table-cell">
+        <div class="header-bar__module">
+          <a href="/cart" class="cart-toggle">
+            <span class="icon icon-cart header-bar__cart-icon" aria-hidden="true"></span>
+            {{ 'layout.cart.title' | t }}
+            <span class="cart-count header-bar__cart-count{% if cart.item_count == 0 %} hidden-count{% endif %}">{{ cart.item_count }}</span>
+          </a>
+        </div>
+
+        {% if shop.customer_accounts_enabled %}
+          <span class="header-bar__sep" aria-hidden="true">|</span>
+          <ul class="header-bar__module header-bar__module--list">
+            {% if customer %}
+              <li>
+                <a href="/account">{{ 'layout.customer.account' | t }}</a>
+              </li>
+              <li>
+                {{ 'layout.customer.log_out' | t | customer_logout_link }}
+              </li>
+            {% else %}
+              <li>
+                {{ 'layout.customer.log_in' | t | customer_login_link }}
+              </li>
+            {% endif %}
+          </ul>
+        {% endif %}
+
+        {% if settings.header_search_enable %}
+          <div class="header-bar__module header-bar__search">
+            <form action="/search" method="get" role="search">
+              {% comment %}<input type="hidden" name="type" value="product">{% endcomment %}
+              <input type="search" name="q" value="{{ search.terms | escape }}" aria-label="{{ 'general.search.placeholder' | t }}" class="header-bar__search-input">
+              <button type="submit" class="btn icon-fallback-text header-bar__search-submit">
+                <span class="icon icon-search" aria-hidden="true"></span>
+                <span class="fallback-text">{{ 'general.search.submit' | t }}</span>
+              </button>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="wrapper large--hide">
+    <button type="button" class="mobile-nav-trigger" id="MobileNavTrigger">
+      <span class="icon icon-hamburger" aria-hidden="true"></span>
+      {{ 'layout.navigation.menu' | t }}
+    </button>
+    <a href="/cart" class="cart-toggle mobile-cart-toggle">
+      <span class="icon icon-cart header-bar__cart-icon" aria-hidden="true"></span>
+      {{ 'layout.cart.title' | t }} <span class="cart-count{% if cart.item_count == 0 %} hidden-count{% endif %}">{{ cart.item_count }}</span>
+    </a>
+  </div>
+  {% include 'mobile-nav' %}
+</div>

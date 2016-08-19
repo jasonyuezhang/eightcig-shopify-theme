@@ -1,0 +1,12 @@
+---
+:api_key: 3a767a6f1903e1c5f30ab4748d49bf06
+:password: 9e875a1eaea506c293b2d66ad034a3c5
+:store: eightcig-2.myshopify.com
+:theme_id: 
+:whitelist_files:
+- layout/
+- assets/
+- config/
+- snippets/
+- templates/
+- locales/
