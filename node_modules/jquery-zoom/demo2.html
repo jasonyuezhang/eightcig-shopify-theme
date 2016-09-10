@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8'/>
+	<style>
+		* { border:0; margin:0; padding:0; }
+
+		.container {
+			width: 313px;
+		}
+
+		.container img {
+			max-width: 100%;
+		}
+
+		.overlay {
+			width: 100%;
+			height: 100%;
+			background: #fff;
+			position: fixed;
+			top: 0;
+			left: 0;
+			overflow: auto;
+			opacity: 0;
+			transition: opacity 0.2s;
+			display: flex;
+			cursor: pointer;
+		}
+
+		.overlay img {
+			margin: auto;
+			display: block;
+		}
+	</style>
+	<script src='http://code.jquery.com/jquery-2.2.0.min.js'></script>
+	<script>
+		$(document).ready(function(){
+			$('.btn').click(function(){
+				var img = new Image();
+				img.src = this.src;
+				$(img).on('load', function(){
+					img.width = img.naturalWidth;
+					img.height = img.naturalHeight;
+					var $overlay = $("<div class='overlay'></div>").append(img);
+					var root = document.querySelector('html');
+
+					root.style.paddingRight = (window.innerWidth - document.documentElement.clientWidth)+'px';
+					root.style.overflow = 'hidden';
+					$overlay.appendTo(document.body);
+
+					$overlay.one('click', function(){
+						$(this).remove();
+						root.style.overflow = '';
+						root.style.paddingRight = '';
+					});
+
+					var ignore = img.offsetWidth; // Force repaint
+					$overlay.css({opacity: 1});
+				});
+			});
+		});
+	</script>
+</head>
+<body>
+	<div class='container'>
+		<img class='btn' src='http://cdn.shopify.com/s/files/1/1108/4246/products/AMY_BLK_38_193_1024x1024.jpg?v=1454978668'/>
+		<img class='btn' src='http://cdn.shopify.com/s/files/1/1108/4246/products/AMY_BLK_38_182_1024x1024.jpg?v=1454978668'/>
+	</div>
+</body>
+</html>
