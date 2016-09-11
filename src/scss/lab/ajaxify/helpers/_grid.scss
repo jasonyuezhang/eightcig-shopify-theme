@@ -1,0 +1,8 @@
+/*============================================================================
+  #Grid Variables
+==============================================================================*/
+$postSmall: $small + $viewportIncrement;
+$preMedium: $medium - $viewportIncrement;
+$preLarge: $large - $viewportIncrement;
+
+$gutter: 30px;

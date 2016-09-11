@@ -1,0 +1,132 @@
+/*================ Partials | Links and Buttons ================*/
+a,
+.text-link {
+  color: $colorLink;
+  text-decoration: none;
+  background: transparent;
+
+  &:hover,
+  &:focus {
+    color: $colorLinkHover;
+  }
+}
+
+button {
+  overflow: visible;
+}
+
+button[disabled],
+html input[disabled] {
+  cursor: default;
+}
+
+.btn {
+  display: inline-block;
+  padding: 8px 16px;
+  margin: 0;
+  line-height: 1.42;
+  font-size: em(15px);
+  font-weight: bold;
+  text-decoration: none;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  @include prefix('user-select', 'none');
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border-radius: $radius;
+
+  /*================ Set primary button colors - can override later ================*/
+  background-color: $colorBtnPrimary;
+  color: $colorBtnPrimaryText;
+
+  &:hover {
+    background-color: $colorBtnPrimaryHover;
+    color: $colorBtnPrimaryText;
+  }
+
+  &:active,
+  &:focus {
+   background-color: $colorBtnPrimaryActive;
+   color: $colorBtnPrimaryText;
+  }
+
+  &[disabled],
+  &.disabled {
+    cursor: default;
+    color: $disabledBorder;
+    background-color: $disabledGrey;
+  }
+}
+
+.btn--secondary,
+input.btn--secondary {
+  @extend .btn;
+  background-color: $colorBtnSecondary;
+
+  &:hover {
+    background-color: $colorBtnSecondaryHover;
+    color: $colorBtnSecondaryText;
+  }
+
+  &:active,
+  &:focus {
+   background-color: $colorBtnSecondaryActive;
+   color: $colorBtnSecondaryText;
+  }
+}
+
+.btn--small {
+  padding: 4px 5px;
+  font-size: em(12px);
+}
+
+.btn--large {
+  padding: 12px 15px;
+  font-size: em(16px);
+}
+
+.btn--full {
+  width: 100%;
+}
+
+.btn--tertiary,
+input.btn--tertiary {
+  @extend .btn;
+  margin: 0;
+  background-color: $colorBtnTertiary;
+  color: $colorBtnTertiaryText;
+  border: 1px solid $colorBorder;
+
+  &:hover {
+    opacity: 1;
+    background-color: $colorBtnTertiaryHover;
+  }
+
+  &:active,
+  &:focus {
+   background-color: $colorBtnTertiaryActive;
+  }
+}
+
+select.btn--tertiary {
+  padding: 6px 28px 6px 10px;
+  font-size: 0.85em;
+
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: $colorBtnTertiary;
+    color: $colorBtnTertiaryText;
+  }
+}
+
+/*================ Force an input/button to look like a text link ================*/
+.text-link {
+  display: inline;
+  border: 0 none;
+  padding: 0;
+  margin: 0;
+}

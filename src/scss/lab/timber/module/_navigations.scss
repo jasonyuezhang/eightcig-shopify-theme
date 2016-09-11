@@ -1,0 +1,111 @@
+/*================ Module | Site Nav and Dropdowns ================*/
+.site-nav {
+  font-size: em(16px);
+  cursor: default;
+  margin: 0 auto;
+  text-align: center;
+
+  li {
+    margin: 0;
+    display: block;
+  }
+
+  & > li {
+    position: relative;
+    display: inline-block;
+
+    &:first-child a {
+      padding-left: 0;
+    }
+
+    &:last-child a {
+      padding-right: 0;
+    }
+  }
+
+  @include at-query ($min, $large) {
+    margin: 0;
+    text-align: right;
+  }
+}
+
+.site-nav__link {
+  display: block;
+  text-decoration: none;
+  padding: $gutter / 2;
+  white-space: nowrap;
+  color: $colorNavText;
+
+  &:hover,
+  &:active,
+  &:focus {
+    color: $colorPrimary;
+  }
+
+  .site-nav--active & {
+    font-weight: bold;
+  }
+
+  .icon-arrow-down {
+    font-size: 0.7em;
+    color: $colorPrimary;
+  }
+}
+
+/*================ Dropdowns ================*/
+.site-nav__dropdown {
+  display: none;
+  position: absolute;
+  left: 0;
+  margin: 0;
+  text-align: left;
+  z-index: 20;
+  font-size: 0.85em;
+  box-shadow: 0px 1px 1px rgba(0,0,0,0.1);
+
+  .supports-no-touch .site-nav--has-dropdown:hover &,
+  .site-nav--has-dropdown.nav-hover &,
+  .nav-focus + & {
+    display: block;
+  }
+
+  .site-nav__link {
+    background-color: $colorHeader;
+    font-weight: normal;
+    padding: 7px 20px 7px 15px;
+
+    &:hover,
+    &:active,
+    &:focus {
+      color: $colorPrimary;
+    }
+  }
+}
+
+/*================ Search bar in header ================*/
+.nav-search {
+  position: relative;
+  padding: 7px 0;
+
+  @include at-query ($max, $medium) {
+    padding: 0 0 ($gutter / 2);
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .input-group,
+  .input-group-field {
+    margin-bottom: 0;
+  }
+}
+
+/*================ Header message (theme setting) ================*/
+.header-message {
+  text-align: center;
+  margin: ($gutter / 2) 0 0;
+  line-height: 1;
+
+  @include at-query($min, $large) {
+    margin-bottom: $gutter / 2;
+  }
+}

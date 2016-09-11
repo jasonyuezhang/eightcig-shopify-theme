@@ -1,0 +1,62 @@
+/*============================================================================
+  #Print Styles
+==============================================================================*/
+@media print {
+  @page {
+    margin: 0.5cm;
+  }
+
+  p, h2, h3 {
+    orphans: 3;
+    widows: 3;
+  }
+
+  h2, h3 {
+    page-break-after: avoid;
+  }
+
+  html, body {
+    -webkit-text-size-adjust: 100%;
+    -webkit-print-color-adjust: exact;
+    background-color: #fff;
+  }
+
+  .giftcard-header {
+    padding: 10px 0;
+  }
+
+  .giftcard__content,
+  .giftcard__border {
+    border: 0 none;
+    padding: 0;
+    background-color: #fff;
+  }
+
+  .giftcard__actions,
+  .giftcard__wrap:before,
+  .giftcard__wrap:after,
+  .tooltip {
+    display: none;
+  }
+
+  .giftcard__title {
+    float: none;
+    text-align: center;
+  }
+
+  .giftcard__code__text {
+    color: #555;
+  }
+
+  .shop-url {
+    display: block;
+  }
+
+  .logo {
+    color: #58686F;
+  }
+
+  #qr-code {
+    display: block;
+  }
+}

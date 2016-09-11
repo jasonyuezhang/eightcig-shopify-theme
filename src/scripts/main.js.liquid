@@ -5,46 +5,11 @@ incompDetect();
 
 import 'babel-polyfill';
 import $ from 'jquery';
-import loader from './utilities/loader';
-import version from './utilities/version';
 import incompatible from './utilities/incompatible';
-import appCopy from './data/app-copy.json';
-
-// render build version if enabled
-version();
-
-// set loader callbacks
-function progressCb(e) {
-    var p = Math.round(100 * e.progress);
-
-    // show progress in loader
-    $('.loader').text(p + appCopy.loader.progress);
-}
-
-function completeCb() {
-    // create new chunk
-    require.ensure([], function (require) {
-        var angular = require('angular');
-
-        require('./app/mApp');
-
-        // hide loader
-        $('.loader-wrapper').fadeOut(500);
-
-        // run app
-        angular.bootstrap(document, ['mApp'], { strictDi: true });
-    });
-}
 
 // bootstrap application
 $(document).ready(function () {
     if (incompatible.isIncompatibleBrowser()) {
         return;
     }
-
-    // show loader
-    $('.loader-wrapper').show().find('.loader').text(appCopy.loader.start);
-
-    // start loader
-    loader.createLoader('main', progressCb, completeCb);
 });

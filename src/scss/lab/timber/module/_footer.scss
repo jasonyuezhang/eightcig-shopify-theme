@@ -1,0 +1,42 @@
+/*================ Module | Footer ================*/
+.site-footer {
+  background-color: $colorFooterBg;
+  padding-top: $gutter;
+  padding-bottom: 20px;
+  color: $colorFooterText;
+
+  form {
+    margin-bottom: 0;
+  }
+
+  p {
+    margin-bottom: 10px;
+  }
+
+  ul {
+    margin-bottom: 0;
+  }
+
+  @include at-query ($min, $large) {
+    padding-top: $gutter * 2;
+  }
+
+  @include at-query ($max, $medium) {
+    .grid__item {
+      margin-bottom: $gutter;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+.site-footer__links a {
+  color: $colorFooterText;
+
+  &:hover,
+  &:active {
+    color: $colorLink;
+  }
+}

@@ -13,42 +13,48 @@
  *
  */
 
-var del                = require('del'),
+var fs                 = require('fs'),
+    del                = require('del'),
+    junk               = require('junk'),
     path               = require('path'),
     gulp               = require('gulp'),
     gutil              = require('gulp-util'),
     concat             = require('gulp-concat'),
     browserSync        = require('browser-sync').create(),
     uglify             = require('gulp-uglify'),
-    sass               = require('gulp-sass'),
     postcss            = require('gulp-postcss'),
     assets             = require('postcss-assets'),
     autoprefixer       = require('autoprefixer'),
+    cssnano            = require('cssnano'),
     file               = require('gulp-file'),
     modernizr          = require('modernizr'),
-    sourcemaps         = require('gulp-sourcemaps'),
     notify             = require('gulp-notify'),
     notifier           = require('node-notifier'),
-    extend             = require('gulp-extend'),
-    jsonlint           = require('gulp-jsonlint'),
     minimist           = require('minimist'),
     gulpif             = require('gulp-if'),
+    changed            = require('gulp-changed'),
     runSequence        = require('run-sequence'),
-    eslint             = require('gulp-eslint'),
     webpack            = require('webpack'),
     ProgressBarPlugin  = require('progress-bar-webpack-plugin'),
     bump               = require('gulp-bump'),
     jeditor            = require('gulp-json-editor'),
+    toJson             = require('gulp-to-json'),
+    shell              = require('gulp-shell'),
+    filter             = require('gulp-filter'),
+    rename             = require('gulp-rename'),
     moment             = require('moment'),
-    modernConfig       = require('./modernizr-config.json'),
-    webpackConfig      = require('./webpack.config.js'),
-    myConfig           = Object.create(webpackConfig),
 
     // get configuration
     config           = require('./config.json'),
     rootFiles        = config.root,
-    scssIncludePaths = config.scssIncludePaths,
+    modernizrConfig  = config.modernizrConfig,
     cssVendor        = config.cssVendor,
+    cssExt           = config.cssExt,
+    cssOrderConfig   = 'order.json',
+    cssOrder,        // assigned by _css-list task
+    shopifyUrl       = config.shopifyUrl,
+    webpackConfig    = require('./webpack.config.js'),
+    myConfig         = Object.create(webpackConfig),
 
     // parse parameters
     argv = minimist(process.argv.slice(2), { boolean: true });
@@ -59,7 +65,10 @@ var del                = require('del'),
  *
  */
 
-var BUILD_DIR = 'dist',
+var SRC_DIR             = config.srcRoot,
+    CSS_DIR             = SRC_DIR + config.cssRoot,
+    SCRIPT_DIR          = SRC_DIR + config.scriptRoot,
+    BUILD_DIR           = config.buildRoot,
     AUTO_PREFIXER_RULES = ['last 2 versions'];
 
 /**
@@ -80,10 +89,9 @@ var TASK_NOTIFICATION = false,
  */
 
 myConfig.output = {
-    path: BUILD_DIR + '/assets',
+    path: BUILD_DIR + 'assets',
     publicPath: 'assets/', // not using
-    filename: '[name].js.liquid',
-    sourceMapFilename: '[file].map'
+    filename: '[name].js.liquid'
 };
 
 myConfig.plugins = [
@@ -105,10 +113,9 @@ if (argv.dist) {
 
 gulp.task('browser-sync', function () {
     browserSync.init({
-        open: 'external',
-        host: 'eightcig-2.myshopify.com',
-        proxy: 'eightcig-2.myshopify.com', // or project.dev/app/
-        port: 443
+        proxy: shopifyUrl,
+        browser: 'google chrome',
+        injectChanges: false // cause of css being served from cdn
     });
 });
 
@@ -159,15 +166,15 @@ gulp.task('_version-bump', function () {
 
 gulp.task('_clean', function () {
     return del([
-        BUILD_DIR + '/assets/*.js',
-        BUILD_DIR + '/assets/*.js.liquid',
-        BUILD_DIR + '/assets/*.scss',
-        BUILD_DIR + '/assets/*.scss.liquid',
-        BUILD_DIR + '/config/*.json',
-        BUILD_DIR + '/layout/*.liquid',
-        BUILD_DIR + '/locales/*.json',
-        BUILD_DIR + '/snippets/*.liquid',
-        BUILD_DIR + '/templates/*.liquid'
+        BUILD_DIR + 'assets/*.js',
+        BUILD_DIR + 'assets/*.js.liquid',
+        BUILD_DIR + 'assets/*.scss',
+        BUILD_DIR + 'assets/*.scss.liquid',
+        BUILD_DIR + 'config/*.json',
+        BUILD_DIR + 'layout/**/*.liquid',
+        BUILD_DIR + 'locales/*.json',
+        BUILD_DIR + 'snippets/**/*.liquid',
+        BUILD_DIR + 'templates/**/*.liquid'
     ], { force: true });
 });
 
@@ -177,35 +184,82 @@ gulp.task('_clean', function () {
  *
  */
 
+function noSubdir(dir) {
+    return fs.readdirSync(dir).every(function(file) {
+        return !fs.statSync(path.join(dir, file)).isDirectory();
+    });
+}
+
+// pseudo code
+//
+// getCSSOrder(path)
+//     if order.json exist at current path
+//         order = order
+//     else
+//         order = all files/folders in current path
+//     endif
+//
+//     for path in order
+//         if path is directory
+//             subOrder = getCSSOrder(path)
+//             firstHalf = order.slice(0, index)
+//             secondHalf = order.slice(index + 1, order.length)
+//             firstHalf.concat(subOrder.concat(secondHalf))
+//
+//     return order
+//
+
+function iterateSubDir(dir, order) {
+    var subDir,
+        subOrder;
+
+    for (var i = 0; i < order.length; i++) {
+        var file = order[i],
+            subDir = path.join(__dirname, dir, file);
+
+        if (fs.statSync(subDir).isDirectory()) {
+            subOrder = getCSSOrder(path.join(dir, file));
+            order = order.slice(0, i).concat(
+                subOrder.concat(
+                    order.slice(i + 1, order.length)
+                )
+            );
+            i += subOrder.length - 1;
+        } else {
+            order[i] = subDir;
+        }
+    }
+
+    return order;
+}
+
+function getCSSOrder (dir) {
+    var orderConfigPath = path.join(__dirname, dir, cssOrderConfig),
+        adjust = 0,
+        order;
+
+    try {
+        fs.accessSync(orderConfigPath, fs.F_OK);
+        order = iterateSubDir(dir, require(orderConfigPath));
+    } catch (e) {
+        if (noSubdir(dir)) {
+            order = cssExt.map(function (ext) { return path.join(__dirname, dir ,'/**/', ext); });
+        } else {
+            order = iterateSubDir(dir, fs.readdirSync(dir).filter(junk.not));
+        }
+    }
+
+    return order
+}
+
 // Build main css
 gulp.task('_css-build', function () {
-    return gulp.src(['src/scss/**/*.scss', 'src/scss/**/*.scss.liquid'])
-        .pipe(gulpif(!argv.dist, sourcemaps.init()))
-        .pipe(
-            sass({ includePaths: scssIncludePaths })
-            .on('error', notify.onError('Error: <%= error.message %>'))
-        )
-        .pipe(
-            gulpif(
-                !argv.dist,
-                postcss([
-                    assets({ basePath: BUILD_DIR }),
-                    autoprefixer({ browsers: AUTO_PREFIXER_RULES })
-                ])
-            )
-        )
-        .pipe(
-            gulpif(
-                argv.dist,
-                postcss([
-                    assets({ basePath: BUILD_DIR }),
-                    autoprefixer({ browsers: AUTO_PREFIXER_RULES }),
-                    cssnano
-                ])
-            )
-        )
-        .pipe(gulpif(!argv.dist, sourcemaps.write('./')))
-        .pipe(gulp.dest(BUILD_DIR + '/assets/'))
+    cssOrder = getCSSOrder(CSS_DIR);
+
+    return gulp.src(cssOrder)
+        .pipe(concat('styles.scss.liquid'))
+        .pipe(gulp.dest(BUILD_DIR + 'assets/'))
+        .pipe(shell(['theme upload assets/styles.scss.liquid']))
         .pipe(gulpif(LIVE_RELOAD, browserSync.stream()))
         .pipe(gulpif(TASK_NOTIFICATION, notify({ message: 'CSS build completed.', onLast: true })));
 });
@@ -213,8 +267,7 @@ gulp.task('_css-build', function () {
 // Build vendor css
 gulp.task('_css-vendor-build', function () {
     return gulp.src(cssVendor)
-        .pipe(gulpif(!argv.dist, sourcemaps.init()))
-        .pipe(concat('vendor.css'))
+        .pipe(concat('vender.css'))
         .pipe(
             gulpif(
                 !argv.dist,
@@ -232,8 +285,8 @@ gulp.task('_css-vendor-build', function () {
                 ])
             )
         )
-        .pipe(gulpif(!argv.dist, sourcemaps.write('./')))
-        .pipe(gulp.dest(BUILD_DIR + '/assets/'))
+        .pipe(gulp.dest(BUILD_DIR + 'assets/'))
+        .pipe(shell(['theme upload assets/vender.css']))
         .pipe(gulpif(LIVE_RELOAD, browserSync.stream()))
         .pipe(gulpif(TASK_NOTIFICATION, notify({ message: 'Vendor CSS build completed.', onLast: true })));
 });
@@ -303,9 +356,7 @@ var createWebpackCb = function (cb) {
     };
 
     return function (err, stats) {
-        runSequence('_js-lint', function () {
-            webpackCb(err, stats);
-        });
+        webpackCb(err, stats);
     };
 };
 
@@ -321,73 +372,65 @@ gulp.task('_js-watch', function (cb) {
 
 // Build modernizr js
 gulp.task('_modernizr-generate', function (cb) {
-    modernizr.build(modernConfig, function (result) {
+    modernizr.build(modernizrConfig, function (result) {
         MODERNIZR_LIB = result;
 
         cb();
     });
 });
 
+// Copy files to distination
+gulp.task('_file-copy', function () {
+    return gulp.src(['src/**/*.liquid', 'src/**/*.json', '!src/scss/**/*.*', '!src/scripts/**/*.*'])
+        .pipe(changed(BUILD_DIR))
+        .pipe(gulp.dest(BUILD_DIR))
+        .pipe(shell([
+            'theme upload <%= f(file.path) %>'
+        ], {
+            templateData: {
+                f: function (s) {
+                    // cut away absolute path of working dir for 'theme' cmd to work
+                    return s.replace(process.cwd() + '/', '')
+                }
+            }
+        }))
+        .pipe(gulpif(LIVE_RELOAD, browserSync.stream()))
+        .pipe(gulpif(TASK_NOTIFICATION, notify({ message: 'Files copy completed.', onLast: true })));
+});
+
 gulp.task('_modernizr-build', ['_modernizr-generate'], function () {
     return file('modernizr.js', MODERNIZR_LIB, { src: true })
         .pipe(gulpif(argv.dist, uglify()))
-        .pipe(gulp.dest(BUILD_DIR + '/assets/'));
-});
-
-// Copy snippets
-gulp.task('_snippets-build', function () {
-    return gulp.src('src/snippets/**/*.liquid')
-        .pipe(gulp.dest(BUILD_DIR + '/snippets/'))
-        .pipe(gulpif(LIVE_RELOAD, browserSync.stream()))
-        .pipe(gulpif(TASK_NOTIFICATION, notify({ message: 'Snippets build completed.', onLast: true })));
-});
-
-// Copy templates
-gulp.task('_templates-build', function () {
-    return gulp.src('src/templates/**/*.liquid')
-        .pipe(gulp.dest(BUILD_DIR + '/templates/'))
-        .pipe(gulpif(LIVE_RELOAD, browserSync.stream()))
-        .pipe(gulpif(TASK_NOTIFICATION, notify({ message: 'Template build completed.', onLast: true })));
-});
-
-// Copy layout
-gulp.task('_layout-build', function () {
-    return gulp.src('src/layout/**/*.liquid')
-        .pipe(gulp.dest(BUILD_DIR + '/layout/'))
-        .pipe(gulpif(LIVE_RELOAD, browserSync.stream()))
-        .pipe(gulpif(TASK_NOTIFICATION, notify({ message: 'Layout build completed.', onLast: true })));
+        .pipe(gulp.dest(BUILD_DIR + 'assets/'))
+        .pipe(shell([
+            'theme upload <%= f(file.path) %>'
+        ], {
+            templateData: {
+                f: function (s) {
+                    // cut away absolute path of working dir for 'theme' cmd to work
+                    return s.replace(process.cwd() + '/', '')
+                }
+            }
+        }));
 });
 
 // Copy root files
-gulp.task('_root-files-build', function () {
+gulp.task('_root-files-copy', function () {
     return gulp.src(rootFiles)
-        .pipe(gulp.dest(BUILD_DIR + '/'))
-        .pipe(gulpif(LIVE_RELOAD, browserSync.stream()))
-        .pipe(gulpif(TASK_NOTIFICATION, notify({ message: 'Root files build completed.', onLast: true })));
-});
-
-/**
- *
- *   ESLint task
- *
- */
-
-gulp.task('_js-lint', function () {
-    return gulp.src(['src/scripts/**/*.js', 'src/scripts/**/*.js.liquid'])
-        .pipe(eslint())
-        .pipe(eslint.format())
-        .pipe(eslint.results(function (results) {
-            if (results.errorCount === 0 && results.warningCount === 0) {
-                return;
+        .pipe(changed(BUILD_DIR))
+        .pipe(gulp.dest(BUILD_DIR))
+        .pipe(shell([
+            'theme upload <%= f(file.path) %>'
+        ], {
+            templateData: {
+                f: function (s) {
+                    // cut away absolute path of working dir for 'theme' cmd to work
+                    return s.replace(process.cwd() + '/', '')
+                }
             }
-
-            notifier.notify({
-                title: 'Error running Gulp',
-                message: 'JavaScript ESLint error.',
-                icon: path.join(__dirname, 'node_modules', 'gulp-notify', 'assets', 'gulp-error.png'),
-                sound: 'Frog'
-            });
-        }));
+        }))
+        .pipe(gulpif(LIVE_RELOAD, browserSync.stream()))
+        .pipe(gulpif(TASK_NOTIFICATION, notify({ message: 'Root files copy completed.', onLast: true })));
 });
 
 /**
@@ -396,9 +439,8 @@ gulp.task('_js-lint', function () {
  *
  */
 
-gulp.task('_build', ['_css-build', '_css-vendor-build', '_snippets-build',
-    '_templates-build', '_layout-build', '_modernizr-build',
-    '_root-files-build', '_data-build'], function () {
+gulp.task('_build', ['_css-build', '_css-vendor-build', '_modernizr-build',
+    '_file-copy', '_root-files-copy'], function () {
     notifier.notify({
         title: 'Gulp notification',
         message: 'Build completed.',
@@ -419,11 +461,7 @@ gulp.task('build', function (cb) {
 gulp.task('_watch', function () {
     gulp.watch(['src/scss/**/*.scss', 'src/scss/**/*.scss.liquid'], ['_css-build']);
 
-    gulp.watch('src/snippets/**/*.liquid', ['_snippets-build']);
-
-    gulp.watch('src/templates/**/*.liquid', ['_templates-build']);
-
-    gulp.watch('src/layout/**/*.liquid', ['_layout-build']);
+    gulp.watch(['src/**/*.liquid', 'src/**/*.json', '!src/scss/**/*.*', '!src/scripts/**/*.*'], ['_file-copy']);
 
     gulp.watch(rootFiles, ['_root-files-build']);
 });

@@ -1,0 +1,305 @@
+*============================================================================
+  #Product Reviews - Free Shopify App
+    - https://apps.shopify.com/product-reviews
+==============================================================================*/
+.shopify-product-reviews {
+  margin: 0;
+
+  .spr-header-title {
+    @extend h1;
+    display: none;
+  }
+
+  .spr-container {
+    padding: 0!important; // important needed to override in-page CSS from plugin
+    border: 0 none;
+  }
+
+  /*================ Summary Rating ================*/
+  .spr-summary {
+    border-bottom: 1px solid $colorBorder;
+    padding-bottom: $gutter / 2;
+    margin-bottom: $gutter;
+
+    @include at-query ($min, $large) {
+      float: left;
+      border: 1px solid $colorBorder;
+      width: 20%;
+      padding: $gutter / 3;
+
+      .spr-summary-starrating {
+        display: block;
+        margin: 0;
+      }
+    }
+  }
+
+  .spr-summary-caption {
+    font-size: 14px;
+
+    @include at-query ($min, $large) {
+      display: block;
+      border-bottom: 1px solid $colorBorder;
+      margin-bottom: $gutter / 3;
+      padding-bottom: $gutter / 3;
+    }
+  }
+
+  .spr-summary-actions-newreview {
+    &:after {
+      content: ' \203A';
+      clear: none;
+      display: inline;
+    }
+
+    @include at-query ($min, $large) {
+      float: none;
+    }
+  }
+
+  .spr-header:after {
+    clear: none;
+  }
+
+  /*================ Content ================*/
+  .spr-content {
+    @include at-query ($min, $large) {
+      float: left;
+      width: 80%;
+      padding-left: $gutter;
+    }
+  }
+
+  .spr-reviews {
+    margin: 0;
+  }
+
+  .spr-review {
+    padding: 0;
+    margin: 0;
+    border: 0 none;
+
+    & + .spr-review {
+      margin-top: $gutter / 2;
+    }
+  }
+
+  .spr-review-content-body {
+    font-size: inherit;
+
+    br {
+      content: '';
+      display: block;
+      overflow: hidden;
+      height: 1px;
+    }
+  }
+
+  /*================ Individual Ratings ================*/
+  .spr-review-header {
+    @include clearfix;
+    margin-bottom: 0;
+  }
+
+  .spr-review-header-title {
+    margin-right: $gutter / 2;
+    font-family: $bodyFontStack;
+    font-weight: 400;
+    text-transform: uppercase;
+    font-size: 17px;
+    line-height: 20px; // may need adjusting if font sizes change
+    position: relative;
+    top: 2px;
+  }
+
+  @include at-query ($min, $large) {
+    .spr-review-header-starratings,
+    .spr-review-header-title {
+      display: inline;
+    }
+
+    .spr-review-header-title {
+      float: left;
+    }
+  }
+
+  .spr-review-header-starratings {
+    position: relative;
+    top: -2px;
+    margin: 0 ($gutter / 2) ($gutter / 3) 0;
+  }
+
+  .spr-review-header-byline {
+    position: relative;
+    top: -2px;
+    display: inline-block;
+    margin: 0;
+  }
+
+  .spr-review-reportreview {
+    display: none;
+  }
+
+  /*================ Review Form ================*/
+  .spr-form {
+    border: 0 none;
+    border-bottom: 1px solid $colorBorder;
+    margin: 0 0 $gutter;
+    padding: 0 0 $gutter;
+  }
+}
+
+/*================ Star Icons ================*/
+.spr-badge-starrating,
+.spr-icon {
+  color: $colorReviewStars;
+  font-size: 0.7em;
+}
+
+/*================ Review count ================*/
+.spr-badge-caption {
+  display: inline-block;
+  font-size: 13px;
+}
+
+/*================ Hide review badge if no reviews ================*/
+.grid-link {
+  .spr-badge[data-rating="0.0"] {
+    display: none;
+  }
+}
+
+.mobile-nav-trigger,
+.mobile-cart-toggle {
+  font-weight: bold;
+
+  .icon {
+    position: relative;
+    top: -1px;
+    vertical-align: middle;
+    padding-right: 4px;
+  }
+}
+
+.mobile-nav-trigger {
+  display: block;
+  float: left;
+  background: none;
+  border: 0 none;
+  padding: 0;
+  margin: 0;
+
+  .icon {
+    font-size: 1.4em;
+  }
+}
+
+.mobile-cart-toggle {
+  display: block;
+  float: right;
+
+  .header-bar__cart-icon {
+    font-size: 1.4em;
+  }
+
+  .cart-count {
+    &:before {
+      display: inline;
+      content: "(";
+    }
+    &:after {
+      display: inline;
+      content: ")";
+    }
+  }
+}
+
+.mobile-nav {
+  display: none;
+  list-style: none;
+  text-align: left;
+  margin: 0;
+
+  li {
+    margin: 0;
+  }
+}
+
+.mobile-nav__link {
+  display: block;
+  border-top: 1px solid $colorTopBarText;
+  border-color: rgba($colorTopBarText, 0.2);
+
+  /*================ Can't always control anchor markup to add a class ================*/
+  > a {
+    display: block;
+    padding: ($gutter / 2.5) ($gutter / 2);
+    font-size: em(15px);
+    font-family: $headerFontStack;
+    font-weight: $headerFontWeight;
+    text-transform: uppercase;
+
+    @include at-query ($min, $small) {
+      padding-left: $gutter;
+      padding-right: $gutter;
+    }
+  }
+}
+
+.mobile-nav__sublist-expand,
+.mobile-nav__sublist-contract {
+  display: inline-block;
+  font-size: 0.6em;
+  vertical-align: middle;
+  margin: -2px 0 0 4px;
+}
+
+.mobile-nav__sublist-contract {
+  display: none;
+}
+
+.mobile-nav__sublist-trigger.is-active {
+  .mobile-nav__sublist-contract {
+    display: inline-block;
+  }
+
+  .mobile-nav__sublist-expand {
+    display: none;
+  }
+}
+
+.mobile-nav__sublist {
+  list-style: none;
+  margin: 0;
+  display: none;
+  background-color: $colorHeader;
+
+  .mobile-nav__sublist {
+    margin-left: $gutter / 2;
+
+    .mobile-nav__sublist-link a {
+      border-top: none;
+    }
+  }
+}
+
+.mobile-nav__sublist-link {
+  a {
+    display: block;
+    padding: ($gutter / 2.5) ($gutter / 2);
+    color: $colorNavText;
+    font-size: em(15px);
+    font-family: $headerFontStack;
+    border-top: 1px solid $colorBorder;
+
+    @include at-query ($min, $small) {
+      padding-left: $gutter;
+      padding-right: $gutter;
+    }
+
+    &:hover {
+      opacity: 1;
+      color: $colorPrimary;
+    }
+  }
+}

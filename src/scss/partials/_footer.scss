@@ -1,0 +1,21 @@
+/*================ Footer ================*/
+.site-footer {
+  p,
+  li,
+  .rte,
+  input {
+    font-size: 0.85em;
+  }
+}
+
+@if $colorBody == $colorHeader {
+  .main-content {
+    margin-top: 0;
+  }
+}
+
+@if $colorBody == $colorFooterBg {
+  .main-content {
+    padding-bottom: 0;
+  }
+}

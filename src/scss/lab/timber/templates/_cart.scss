@@ -1,0 +1,89 @@
+/*================ Templates | Cart Page ================*/
+.cart__row {
+  position: relative;
+  padding-top: $gutter;
+
+  & + & {
+    margin-top: $gutter;
+    border-top: 1px solid $colorBorder;
+  }
+
+  &:first-child {
+    margin-top: 0;
+  }
+
+  &:first-child {
+    padding-top: 0;
+    border-top: 0 none;
+  }
+
+  .js-qty {
+    margin: 0;
+  }
+}
+
+@include at-query ($min, $large) {
+  .cart__row--table-large {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+
+    .grid__item {
+      display: table-cell;
+      vertical-align: middle;
+      float: none;
+    }
+  }
+}
+
+.cart__image {
+  display: block;
+
+  img {
+    display: block;
+  }
+}
+
+.cart__subtotal {
+  margin: 0 0 0 ($gutter / 3);
+  display: inline;
+}
+
+.cart__mini-labels {
+  display: block;
+  margin: ($gutter / 3) 0;
+  font-size: em(12px);
+
+  @include at-query ($min, $large) {
+    display: none;
+  }
+}
+
+.cart__remove {
+  display: block;
+}
+
+.cart__note-add.is-hidden {
+  display: none;
+}
+
+.cart__note {
+  display: none;
+
+  &.is-active {
+    display: block;
+  }
+}
+
+.cart__additional_checkout {
+  margin: ($gutter / 2) 0 0;
+
+  input {
+    padding: 0;
+  }
+
+  .google-wallet-button-holder {
+    display: inline-block;
+    vertical-align: 10px;
+  }
+}

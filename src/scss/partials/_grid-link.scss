@@ -1,0 +1,138 @@
+/*================ Module | Grid Link ================*/
+.grid-link__container {
+  margin-bottom: -$gutter;
+}
+
+.grid-link,
+.grid-link--focus {
+  position: relative;
+  display: block;
+  padding-bottom: $gutter;
+  line-height: 1.3;
+
+  &:hover,
+  &:active {
+    .grid-link__image {
+      opacity: 0.8;
+    }
+  }
+}
+
+.grid-link--focus {
+  padding: $gutter / 1.5;
+  box-shadow: 0px 1px 1px rgba(0,0,0,0.1);
+  margin-bottom: $gutter;
+
+  &:before {
+    display: block;
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: $colorFooterBg;
+    @include transition(all 0.08s ease-in);
+  }
+
+  &:hover,
+  &:active {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+}
+
+.grid-link__image {
+  position: relative;
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+  margin: 0 auto 6px;
+  @include transition(all 0.08s ease-in);
+
+  img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+
+    .sold-out & {
+      opacity: 0.4;
+      filter: alpha(opacity=40);
+    }
+  }
+
+  .list-view__product & {
+    min-width: 130px;
+  }
+}
+
+.grid-link__image-centered {
+  display: table-cell;
+  vertical-align: middle;
+  width: 100%;
+  overflow: hidden;
+}
+
+.grid-link__title,
+.grid-link__meta {
+  position: relative;
+  margin-bottom: 5px;
+}
+
+.grid-link__meta {
+  color: $colorTextBody;
+  line-height: 1.4;
+}
+
+.grid-link__sale_price {
+  opacity: 0.7;
+  filter: alpha(opacity=70);
+}
+
+.list-view__product {
+  border-bottom: 1px solid $colorBorder;
+  margin-bottom: $gutter / 3;
+  padding-bottom: $gutter / 3;
+}
+
+$badgeSize: 55px;
+.badge {
+  display: table;
+  position: absolute;
+  width: $badgeSize;
+  height: $badgeSize;
+  background-color: $colorPrimary;
+  color: $colorBtnPrimaryText;
+  border-radius: 50%;
+  text-transform: uppercase;
+  font-weight: bold;
+  text-align: center;
+  font-size: em(10px);
+  line-height: 1.1;
+  z-index: 10;
+}
+
+.badge--sold-out {
+  top: 50%;
+  left: 50%;
+  margin-top: -($badgeSize / 2);
+  margin-left: -($badgeSize / 2);
+}
+
+.badge--sale {
+  top: -($badgeSize / 3);
+  left: -($badgeSize / 3);
+}
+
+.badge__text {
+  display: table-cell;
+  vertical-align: middle;
+  padding: 2px 8px 0;
+}
+
+.badge__text--small {
+  font-size: 8px;
+  padding-top: 0;
+}

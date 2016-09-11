@@ -1,0 +1,6801 @@
+@charset "UTF-8";
+
+/// A list of all HTML button elements.
+///
+/// @type list
+///
+/// @access private
+
+$_buttons-list: (
+  "button",
+  "[type='button']",
+  "[type='reset']",
+  "[type='submit']",
+);
+
+@charset "UTF-8";
+
+////
+/// Pre-defined scales for use with the `modular-scale` function.
+///
+/// @type number (unitless)
+///
+/// @see {function} modular-scale
+////
+
+$minor-second:     1.067;
+$major-second:     1.125;
+$minor-third:      1.2;
+$major-third:      1.25;
+$perfect-fourth:   1.333;
+$augmented-fourth: 1.414;
+$perfect-fifth:    1.5;
+$minor-sixth:      1.6;
+$golden:           1.618;
+$major-sixth:      1.667;
+$minor-seventh:    1.778;
+$major-seventh:    1.875;
+$octave:           2;
+$major-tenth:      2.5;
+$major-eleventh:   2.667;
+$major-twelfth:    3;
+$double-octave:    4;
+
+@charset "UTF-8";
+
+/// A list of all _text-based_ HTML inputs.
+///
+/// @type list
+///
+/// @access private
+
+$_text-inputs-list: (
+  "[type='color']",
+  "[type='date']",
+  "[type='datetime']",
+  "[type='datetime-local']",
+  "[type='email']",
+  "[type='month']",
+  "[type='number']",
+  "[type='password']",
+  "[type='search']",
+  "[type='tel']",
+  "[type='text']",
+  "[type='time']",
+  "[type='url']",
+  "[type='week']",
+  "input:not([type])",
+  "textarea",
+);
+
+@charset "UTF-8";
+
+/// Default global Bourbon settings. Values in this map are overwritten by any
+/// values set in the `$bourbon` map.
+///
+/// @type map
+///
+/// @property {color} contrast-switch-dark-color [#000]
+///   Global dark color for the `contrast-switch` function.
+///
+/// @property {color} contrast-switch-light-color [#fff]
+///   Global light color for the `contrast-switch` function.
+///
+/// @property {list} global-font-file-formats [("ttf", "woff2", "woff")]
+///   Global font file formats for the `font-face` mixin.
+///
+/// @property {number (with unit)} modular-scale-base [1em]
+///   Global base value for the `modular-scale` function.
+///
+/// @property {number (unitless)} modular-scale-ratio [$major-third (1.25)]
+///   Global base ratio for the `modular-scale` function.
+///
+/// @property {boolean} rails-asset-pipeline [false]
+///   Set this to `true` when using the Rails Asset Pipeline and Bourbon will
+///   write asset paths using
+///   [sass-rails’ asset helpers](https://github.com/rails/sass-rails#asset-helpers).
+///
+/// @access private
+
+$_bourbon-defaults: (
+  "contrast-switch-dark-color": #000,
+  "contrast-switch-light-color": #fff,
+  "global-font-file-formats": ("ttf", "woff2", "woff"),
+  "modular-scale-base": 1em,
+  "modular-scale-ratio": $major-third,
+  "rails-asset-pipeline": false,
+);
+
+/// Global Bourbon settings.
+///
+/// @name Settings
+///
+/// @type map
+///
+/// @property {color} contrast-switch-dark-color [#000]
+///   Global dark color for the `contrast-switch` function.
+///
+/// @property {color} contrast-switch-light-color [#fff]
+///   Global light color for the `contrast-switch` function.
+///
+/// @property {list} global-font-file-formats [("ttf", "woff2", "woff")]
+///   Global font file formats for the `font-face` mixin.
+///
+/// @property {number (with unit)} modular-scale-base [1em]
+///   Global base value for the `modular-scale` function.
+///
+/// @property {number (unitless)} modular-scale-ratio [$major-third (1.25)]
+///   Global base ratio for the `modular-scale` function.
+///
+/// @property {boolean} rails-asset-pipeline [false]
+///   Set this to `true` when using the Rails Asset Pipeline and Bourbon will
+///   write asset paths using
+///   [sass-rails’ asset helpers](https://github.com/rails/sass-rails#asset-helpers).
+///
+/// @example scss
+///   $bourbon: (
+///     "contrast-switch-dark-color": #000,
+///     "contrast-switch-light-color": #fff,
+///     "global-font-file-formats": ("ttf", "woff2", "woff"),
+///     "modular-scale-base": 1em,
+///     "modular-scale-ratio": $major-third,
+///     "rails-asset-pipeline": false,
+///   );
+
+$bourbon: () !default;
+
+@charset "UTF-8";
+
+/// Checks if a list does not contains a value.
+///
+/// @argument {list} $list
+///   The list to check against.
+///
+/// @return {boolean}
+///
+/// @access private
+
+@function _contains-falsy($list) {
+  @each $item in $list {
+    @if not $item {
+      @return true;
+    }
+  }
+
+  @return false;
+}
+
+@charset "UTF-8";
+
+/// Checks if a list contains a value(s).
+///
+/// @argument {list} $list
+///   The list to check against.
+///
+/// @argument {list} $values
+///   A single value or list of values to check for.
+///
+/// @return {boolean}
+///
+/// @access private
+
+@function _contains(
+    $list,
+    $values...
+  ) {
+
+  @each $value in $values {
+    @if type-of(index($list, $value)) != "number" {
+      @return false;
+    }
+  }
+
+  @return true;
+}
+
+@charset "UTF-8";
+
+/// Checks for a valid CSS color.
+///
+/// @argument {string} $color
+///
+/// @return {boolean}
+///
+/// @access private
+
+@function _is-color($color) {
+  @return (type-of($color) == color) or ($color == "currentColor");
+}
+
+@charset "UTF-8";
+
+/// Checks for a valid CSS length.
+///
+/// @argument {string} $value
+///
+/// @return {boolean}
+///
+/// @access private
+
+@function _is-length($value) {
+  @return type-of($value) != "null" and (str-slice($value + "", 1, 4) == "calc"
+       or index(auto inherit initial 0, $value)
+       or (type-of($value) == "number" and not(unitless($value))));
+}
+
+@charset "UTF-8";
+
+/// Programatically determines whether a color is light or dark.
+///
+/// @link http://goo.gl/Dil4Y9
+///
+/// @argument {color (hex)} $hex-color
+///
+/// @return {boolean}
+///
+/// @example scss
+///   is-light($color)
+///
+/// @access private
+
+@function _is-light($hex-color) {
+  $-local-red: red(rgba($hex-color, 1));
+  $-local-green: green(rgba($hex-color, 1));
+  $-local-blue: blue(rgba($hex-color, 1));
+  $-local-lightness: ($-local-red * 0.2126 + $-local-green * 0.7152 + $-local-blue * 0.0722) / 255;
+
+  @return $-local-lightness > 0.6;
+}
+
+@charset "UTF-8";
+
+/// Checks for a valid number.
+///
+/// @argument {number} $value
+///
+/// @require {function} _contains
+///
+/// @return {boolean}
+///
+/// @access private
+
+@function _is-number($value) {
+  @return _contains("0" "1" "2" "3" "4" "5" "6" "7" "8" "9" 0 1 2 3 4 5 6 7 8 9, $value);
+}
+
+@charset "UTF-8";
+
+/// Checks for a valid CSS size.
+///
+/// @argument {string} $value
+///
+/// @return {boolean}
+///
+/// @require {function} _contains
+///
+/// @require {function} _is-length
+///
+/// @access private
+
+@function _is-size($value) {
+  @return _is-length($value)
+          or _contains("fill" "fit-content" "min-content" "max-content", $value);
+}
+
+@charset "UTF-8";
+
+/// Append pseudo-classes to a selector(s).
+///
+/// @argument {list | string} $inputs
+///   A selector, or list of selectors, to apply the pseudo-class to.
+///
+/// @argument {pseudo-class} $pseudo [null]
+///   The pseudo-class to be appended.
+///
+/// @return {list}
+///
+/// @access private
+
+@function _assign-inputs(
+    $inputs,
+    $pseudo: null
+  ) {
+
+  $list: ();
+
+  @each $input in $inputs {
+    $input: unquote($input);
+    $input: if($pseudo, $input + ":" + $pseudo, $input);
+    $list: append($list, $input, comma);
+  }
+
+  @return $list;
+}
+
+@charset "UTF-8";
+
+// scss-lint:disable ElsePlacement
+
+/// Directional-property mixins are shorthands for writing properties like
+/// the following.
+///
+/// @ignore You can also use `false` instead of `null`.
+///
+/// @argument {list} $values
+///   List of directional values.
+///
+/// @example scss
+///   .element {
+///     @include border-style(dotted null);
+///     @include margin(null 0 10px);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     border-bottom-style: dotted;
+///     border-top-style: dotted;
+///     margin-bottom: 10px;
+///     margin-left: 0;
+///     margin-right: 0;
+///   }
+///
+/// @return {list}
+///
+/// @access private
+
+@function _collapse-directionals($values) {
+  $output: null;
+
+  $a: nth($values, 1);
+  $b: if(length($values) < 2, $a, nth($values, 2));
+  $c: if(length($values) < 3, $a, nth($values, 3));
+  $d: if(length($values) < 2, $a, nth($values, if(length($values) < 4, 2, 4)));
+
+  @if $a == 0 { $a: 0; }
+  @if $b == 0 { $b: 0; }
+  @if $c == 0 { $c: 0; }
+  @if $d == 0 { $d: 0; }
+
+  @if $a == $b and $a == $c and $a == $d { $output: $a;          }
+  @else if $a == $c and $b == $d         { $output: $a $b;       }
+  @else if $b == $d                      { $output: $a $b $c;    }
+  @else                                  { $output: $a $b $c $d; }
+
+  @return $output;
+}
+
+@charset "UTF-8";
+
+// scss-lint:disable SpaceAroundOperator
+
+/// Output directional properties, for instance `margin`.
+///
+/// @argument {string} $pre
+///   Prefix to use.
+///
+/// @argument {string} $suf
+///   Suffix to use.
+///
+/// @argument {list} $values
+///   List of values.
+///
+/// @require {function} _collapse-directionals
+///
+/// @require {function} _contains-falsy
+///
+/// @access private
+
+@mixin _directional-property(
+    $pre,
+    $suf,
+    $values
+  ) {
+
+  $top:    $pre + "-top"    + if($suf, "-#{$suf}", "");
+  $bottom: $pre + "-bottom" + if($suf, "-#{$suf}", "");
+  $left:   $pre + "-left"   + if($suf, "-#{$suf}", "");
+  $right:  $pre + "-right"  + if($suf, "-#{$suf}", "");
+  $all:    $pre +             if($suf, "-#{$suf}", "");
+
+  $values: _collapse-directionals($values);
+
+  @if _contains-falsy($values) {
+    @if nth($values, 1) { #{$top}: nth($values, 1); }
+
+    @if length($values) == 1 {
+      @if nth($values, 1) { #{$right}: nth($values, 1); }
+    } @else {
+      @if nth($values, 2) { #{$right}: nth($values, 2); }
+    }
+
+    @if length($values) == 2 {
+      @if nth($values, 1) { #{$bottom}: nth($values, 1); }
+      @if nth($values, 2) { #{$left}: nth($values, 2); }
+    } @else if length($values) == 3 {
+      @if nth($values, 3) { #{$bottom}: nth($values, 3); }
+      @if nth($values, 2) { #{$left}: nth($values, 2); }
+    } @else if length($values) == 4 {
+      @if nth($values, 3) { #{$bottom}: nth($values, 3); }
+      @if nth($values, 4) { #{$left}: nth($values, 4); }
+    }
+  } @else {
+    #{$all}: $values;
+  }
+}
+
+@charset "UTF-8";
+
+/// Builds the `src` list for an `@font-face` declaration.
+///
+/// @link http://goo.gl/Ru1bKP
+///
+/// @argument {string} $font-family
+///
+/// @argument {string} $file-path
+///
+/// @argument {boolean} $asset-pipeline
+///
+/// @argument {list} $file-formats
+///
+/// @return {list}
+///
+/// @require {function} _contains
+///
+/// @access private
+
+@function _font-source-declaration(
+    $font-family,
+    $file-path,
+    $asset-pipeline,
+    $file-formats
+  ) {
+
+  $src: ();
+
+  $formats-map: (
+    eot:   "#{$file-path}.eot?#iefix" format("embedded-opentype"),
+    woff2: "#{$file-path}.woff2" format("woff2"),
+    woff:  "#{$file-path}.woff" format("woff"),
+    ttf:   "#{$file-path}.ttf" format("truetype"),
+    svg:   "#{$file-path}.svg##{$font-family}" format("svg"),
+  );
+
+  @each $key, $values in $formats-map {
+    @if _contains($file-formats, $key) {
+      $file-path: nth($values, 1);
+      $font-format: nth($values, 2);
+
+      @if $asset-pipeline == true {
+        $src: append($src, font-url($file-path) $font-format, comma);
+      } @else {
+        $src: append($src, url($file-path) $font-format, comma);
+      }
+    }
+  }
+
+  @return $src;
+}
+
+@charset "UTF-8";
+
+/// Return a Bourbon setting.
+///
+/// @argument {string} $setting
+///
+/// @return {boolean | color | list | number | string}
+///
+/// @example scss
+///   _retrieve-bourbon-setting(rails-asset-pipeline)
+///
+/// @access private
+
+@function _retrieve-bourbon-setting($setting) {
+  @return map-get(map-merge($_bourbon-defaults, $bourbon), $setting);
+}
+
+@charset "UTF-8";
+
+/// Converts shorthand to the 4-value syntax.
+///
+/// @argument {list} $shorthand
+///
+/// @example scss
+///   .element {
+///     margin: _unpack(1em 2em);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     margin: 1em 2em 1em 2em;
+///   }
+///
+/// @access private
+
+@function _unpack($shorthand) {
+  @if length($shorthand) == 1 {
+    @return nth($shorthand, 1) nth($shorthand, 1) nth($shorthand, 1) nth($shorthand, 1);
+  } @else if length($shorthand) == 2 {
+    @return nth($shorthand, 1) nth($shorthand, 2) nth($shorthand, 1) nth($shorthand, 2);
+  } @else if length($shorthand) == 3 {
+    @return nth($shorthand, 1) nth($shorthand, 2) nth($shorthand, 3) nth($shorthand, 2);
+  } @else {
+    @return $shorthand;
+  }
+}
+
+@charset "UTF-8";
+
+/// Provides a quick method for targeting `border-color` on specific sides of a
+/// box. Use a `null` value to “skip” a side.
+///
+/// @argument {arglist} $values
+///   List of colors, defined as CSS shorthand.
+///
+/// @example scss
+///   .element {
+///     @include border-color(#a60b55 #76cd9c null #e8ae1a);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     border-left-color: #e8ae1a;
+///     border-right-color: #76cd9c;
+///     border-top-color: #a60b55;
+///   }
+///
+/// @require {mixin} _directional-property
+
+@mixin border-color($values...) {
+  @include _directional-property(border, color, $values...);
+}
+
+@charset "UTF-8";
+
+/// Provides a shorthand syntax to add `border-radius` to both the top-left and
+/// top-right of an element.
+///
+/// @argument {number (with unit)} $radii
+///
+/// @example scss
+///   .element {
+///     @include border-top-radius(4px);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     border-top-left-radius: 4px;
+///     border-top-right-radius: 4px;
+///   }
+
+@mixin border-top-radius($radii) {
+  border-top-left-radius: $radii;
+  border-top-right-radius: $radii;
+}
+
+/// Provides a shorthand syntax to add `border-radius` to both the top-right and
+/// bottom-right of an element.
+///
+/// @argument {number (with unit)} $radii
+///
+/// @example scss
+///   .element {
+///     @include border-right-radius(3px);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     border-bottom-right-radius: 3px;
+///     border-top-right-radius: 3px;
+///   }
+
+@mixin border-right-radius($radii) {
+  border-bottom-right-radius: $radii;
+  border-top-right-radius: $radii;
+}
+
+/// Provides a shorthand syntax to add `border-radius` to both the bottom-left
+/// and bottom-right of an element.
+///
+/// @argument {number (with unit)} $radii
+///
+/// @example scss
+///   .element {
+///     @include border-bottom-radius(2px);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     border-bottom-left-radius: 2px;
+///     border-bottom-right-radius: 2px;
+///   }
+
+@mixin border-bottom-radius($radii) {
+  border-bottom-left-radius: $radii;
+  border-bottom-right-radius: $radii;
+}
+
+/// Provides a shorthand syntax to add `border-radius` to both the top-left
+/// and bottom-left of an element.
+///
+/// @argument {number (with unit)} $radii
+///
+/// @example scss
+///   .element {
+///     @include border-left-radius(1px);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     border-bottom-left-radius: 1px;
+///     border-top-left-radius: 1px;
+///   }
+
+@mixin border-left-radius($radii) {
+  border-bottom-left-radius: $radii;
+  border-top-left-radius: $radii;
+}
+
+@charset "UTF-8";
+
+/// Provides a quick method for targeting `border-style` on specific sides of a
+/// box. Use a `null` value to “skip” a side.
+///
+/// @argument {arglist} $values
+///   List of border styles, defined as CSS shorthand.
+///
+/// @example scss
+///   .element {
+///     @include border-style(dashed null solid);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     border-bottom-style: solid;
+///     border-top-style: dashed;
+///   }
+///
+/// @require {mixin} _directional-property
+
+@mixin border-style($values...) {
+  @include _directional-property(border, style, $values...);
+}
+
+@charset "UTF-8";
+
+/// Provides a quick method for targeting `border-width` on specific sides of a
+/// box. Use a `null` value to “skip” a side.
+///
+/// @argument {arglist} $values
+///   List of border widths, defined as CSS shorthand.
+///
+/// @example scss
+///   .element {
+///     @include border-width(1em null 20px);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     border-bottom-width: 20px;
+///     border-top-width: 1em;
+///   }
+///
+/// @require {mixin} _directional-property
+
+@mixin border-width($values...) {
+  @include _directional-property(border, width, $values...);
+}
+
+@charset "UTF-8";
+
+////
+/// @type list
+///
+/// @require {function} _assign-inputs
+///
+/// @require {variable} $_buttons-list
+////
+
+/// A list of all HTML button elements. Please note that you must interpolate
+/// the variable (`#{}`) to use it as a selector.
+///
+/// @example scss
+///   #{$all-buttons} {
+///     background-color: #f00;
+///   }
+///
+///   // CSS Output
+///   button,
+///   [type='button'],
+///   [type='reset'],
+///   [type='submit'] {
+///     background-color: #f00;
+///   }
+
+$all-buttons: _assign-inputs($_buttons-list);
+
+/// A list of all HTML button elements with the `:active` pseudo-class applied.
+/// Please note that you must interpolate the variable (`#{}`) to use it as a
+/// selector.
+///
+/// @example scss
+///   #{$all-buttons-active} {
+///     background-color: #00f;
+///   }
+///
+///   // CSS Output
+///   button:active,
+///   [type='button']:active,
+///   [type='reset']:active,
+///   [type='submit']:active {
+///     background-color: #00f;
+///   }
+
+$all-buttons-active: _assign-inputs($_buttons-list, active);
+
+/// A list of all HTML button elements with the `:focus` pseudo-class applied.
+/// Please note that you must interpolate the variable (`#{}`) to use it as a
+/// selector.
+///
+/// @example scss
+///   #{$all-buttons-focus} {
+///     background-color: #0f0;
+///   }
+///
+///   // CSS Output
+///   button:focus,
+///   [type='button']:focus,
+///   [type='reset']:focus,
+///   [type='submit']:focus {
+///     background-color: #0f0;
+///   }
+
+$all-buttons-focus: _assign-inputs($_buttons-list, focus);
+
+/// A list of all HTML button elements with the `:hover` pseudo-class applied.
+/// Please note that you must interpolate the variable (`#{}`) to use it as a
+/// selector.
+///
+/// @example scss
+///   #{$all-buttons-hover} {
+///     background-color: #0f0;
+///   }
+///
+///   // CSS Output
+///   button:hover,
+///   [type='button']:hover,
+///   [type='reset']:hover,
+///   [type='submit']:hover {
+///     background-color: #0f0;
+///   }
+
+$all-buttons-hover: _assign-inputs($_buttons-list, hover);
+
+@charset "UTF-8";
+
+/// Provides an easy way to include a clearfix for containing floats.
+///
+/// @link http://goo.gl/yP5hiZ
+///
+/// @example scss
+///   .element {
+///     @include clearfix;
+///   }
+///
+///   // CSS Output
+///   .element::after {
+///     clear: both;
+///     content: "";
+///     display: block;
+///   }
+
+@mixin clearfix {
+  &::after {
+    clear: both;
+    content: "";
+    display: block;
+  }
+}
+
+@charset "UTF-8";
+
+/// Switches between two colors based on the lightness of a another color. Great
+/// for building button styles.
+///
+/// @argument {color} $base-color
+///   The color to evaluate lightness against.
+///
+/// @argument {color} $dark-color [#000]
+///   The color to be output when `$base-color` is light.
+///
+/// @argument {color} $light-color [#fff]
+///   The color to be output when `$base-color` is dark.
+///
+/// @return {color}
+///
+/// @example scss
+///   .element {
+///     color: contrast-switch(#bae6e6);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     color: #000;
+///   }
+///
+/// @example scss
+///   .element {
+///     $button-color: #2d72d9;
+///     background-color: $button-color;
+///     color: contrast-switch($button-color, #222, #eee);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     background-color: #2d72d9;
+///     color: #eee;
+///   }
+///
+/// @require {function} _is-light
+///
+/// @since 5.0.0
+
+@function contrast-switch(
+    $base-color,
+    $dark-color: _retrieve-bourbon-setting("contrast-switch-dark-color"),
+    $light-color: _retrieve-bourbon-setting("contrast-switch-light-color")
+  ) {
+
+  @if not _is-color($base-color) {
+    @error "`#{$base-color}` is not a valid color for the `$base-color` " +
+           "argument in the `contrast-switch` function.";
+  } @else if not _is-color($dark-color) {
+    @error "`#{$dark-color}` is not a valid color for the `$dark-color` " +
+           "argument in the `contrast-switch` function.";
+  } @else if not _is-color($light-color) {
+    @error "`#{$light-color}` is not a valid color for the `$light-color` " +
+           "argument in the `contrast-switch` function.";
+  } @else {
+    @return if(_is-light($base-color), $dark-color, $light-color);
+  }
+}
+
+@charset "UTF-8";
+
+/// Truncates text and adds an ellipsis to represent overflow.
+///
+/// @argument {number} $width [100%]
+///   The `max-width` for the string to respect before being truncated.
+///
+/// @argument {string} $display [inline-block]
+///   Sets the display-value of the element.
+///
+/// @example scss
+///   .element {
+///     @include ellipsis;
+///   }
+///
+///   // CSS Output
+///   .element {
+///     display: inline-block;
+///     max-width: 100%;
+///     overflow: hidden;
+///     text-overflow: ellipsis;
+///     white-space: nowrap;
+///     word-wrap: normal;
+///   }
+
+@mixin ellipsis(
+    $width: 100%,
+    $display: inline-block
+  ) {
+
+  display: $display;
+  max-width: $width;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-wrap: normal;
+}
+
+@charset "UTF-8";
+
+/// Generates an `@font-face` declaration. You can choose the specific file
+/// formats you need to output; the mixin supports `eot`, `ttf`, `svg`, `woff2`
+/// and `woff`. The mixin also supports usage with the Rails Asset Pipeline,
+/// which you can enable per use, or globally in the `$bourbon()` settings.
+///
+/// @argument {string} $font-family
+///
+/// @argument {string} $file-path
+///
+/// @argument {string} $asset-pipeline [false]
+///   Set to `true` if you’re using the Rails Asset Pipeline (place the fonts
+///   in `app/assets/fonts/`).
+///
+/// @argument {string | list} $file-formats [("ttf", "woff2", "woff")]
+///   Pass a list of file formats to support,
+///   for example ("eot", "ttf", "svg", "woff2", "woff").
+///
+/// @content
+///   Any additional CSS properties that are included in the `@include`
+///   directive will be output within the `@font-face` declaration, e.g. you can
+///   pass in `font-weight`, `font-style` and/or `unicode-range`.
+///
+/// @example scss
+///   @include font-face(
+///       "source-sans-pro",
+///       "fonts/source-sans-pro-regular",
+///       ("woff2", "woff")
+///     ) {
+///     font-style: normal;
+///     font-weight: 400;
+///   }
+///
+///   // CSS Output
+///   @font-face {
+///     font-family: "source-sans-pro";
+///     src: url("fonts/source-sans-pro-regular.woff2") format("woff2"),
+///          url("fonts/source-sans-pro-regular.woff") format("woff");
+///     font-style: normal;
+///     font-weight: 400;
+///   }
+///
+/// @require {function} _font-source-declaration
+///
+/// @require {function} _retrieve-bourbon-setting
+
+@mixin font-face(
+    $font-family,
+    $file-path,
+    $file-formats: _retrieve-bourbon-setting("global-font-file-formats"),
+    $asset-pipeline: _retrieve-bourbon-setting("rails-asset-pipeline")
+  ) {
+
+  @font-face {
+    font-family: $font-family;
+    src: _font-source-declaration(
+      $font-family,
+      $file-path,
+      $asset-pipeline,
+      $file-formats
+    );
+    @content;
+  }
+}
+
+@charset "UTF-8";
+
+////
+/// @type list
+///
+/// @link goo.gl/Cxb26i
+////
+
+$font-stack-helvetica: (
+  "Helvetica Neue",
+  "Helvetica",
+  "Arial",
+  sans-serif,
+);
+
+$font-stack-lucida-grande: (
+  "Lucida Grande",
+  "Lucida Sans Unicode",
+  "Geneva",
+  "Verdana",
+  sans-serif,
+);
+
+$font-stack-verdana: (
+  "Verdana",
+  "Geneva",
+  sans-serif,
+);
+
+$font-stack-system: (
+  -apple-system,
+  BlinkMacSystemFont,
+  "Segoe UI",
+  "Roboto",
+  "Oxygen",
+  "Ubuntu",
+  "Cantarell",
+  "Fira Sans",
+  "Droid Sans",
+  "Helvetica Neue",
+  sans-serif,
+);
+
+$font-stack-garamond: (
+  "Garamond",
+  "Baskerville",
+  "Baskerville Old Face",
+  "Hoefler Text",
+  "Times New Roman",
+  serif,
+);
+
+$font-stack-georgia: (
+  "Georgia",
+  "Times",
+  "Times New Roman",
+  serif,
+);
+
+$font-stack-hoefler-text: (
+  "Hoefler Text",
+  "Baskerville Old Face",
+  "Garamond",
+  "Times New Roman",
+  serif,
+);
+
+$font-stack-consolas: (
+  "Consolas",
+  "monaco",
+  monospace,
+);
+
+$font-stack-courier-new: (
+  "Courier New",
+  "Courier",
+  "Lucida Sans Typewriter",
+  "Lucida Typewriter",
+  monospace,
+);
+
+$font-stack-monaco: (
+  "monaco",
+  "Consolas",
+  "Lucida Console",
+  monospace,
+);
+
+@charset "UTF-8";
+
+/// Hides the text in an element, commonly used to show an image instead. Some
+/// elements will need block-level styles applied.
+///
+/// @link http://goo.gl/EvLRIu
+///
+/// @example scss
+///   .element {
+///     @include hide-text;
+///   }
+///
+///   // CSS Output
+///   .element {
+///     overflow: hidden;
+///     text-indent: 101%;
+///     white-space: nowrap;
+///   }
+
+@mixin hide-text {
+  overflow: hidden;
+  text-indent: 101%;
+  white-space: nowrap;
+}
+
+@charset "UTF-8";
+
+/// Hides an element visually while still allowing the content to be accessible
+/// to assistive technology, e.g. screen readers. Passing `unhide` will reverse
+/// the affects of the hiding, which is handy for showing the element on focus,
+/// for example.
+///
+/// @link http://goo.gl/Vf1TGn
+///
+/// @argument {string} $toggle [hide]
+///   Accepts `hide` or `unhide`. `unhide` reverses the affects of `hide`.
+///
+/// @example scss
+///   .element {
+///     @include hide-visually;
+///
+///     &:active,
+///     &:focus {
+///       @include hide-visually(unhide);
+///     }
+///   }
+///
+///   // CSS Output
+///   .element {
+///     border: 0;
+///     clip: rect(1px, 1px, 1px, 1px);
+///     clip-path: circle(1% at 1% 1%);
+///     height: 1px;
+///     overflow: hidden;
+///     padding: 0;
+///     position: absolute;
+///     width: 1px;
+///   }
+///
+///   .hide-visually:active,
+///   .hide-visually:focus {
+///     clip: auto;
+///     clip-path: none;
+///     height: auto;
+///     overflow: visible;
+///     position: static;
+///     width: auto;
+///   }
+///
+/// @since 5.0.0
+
+@mixin hide-visually($toggle: hide) {
+  @if $toggle == "hide" {
+    border: 0;
+    clip: rect(1px, 1px, 1px, 1px);
+    clip-path: circle(1% at 1% 1%);
+    height: 1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+  } @else if $toggle == "unhide" {
+    clip: auto;
+    clip-path: none;
+    height: auto;
+    overflow: visible;
+    position: static;
+    width: auto;
+  }
+}
+
+@charset "UTF-8";
+
+/// Provides a quick method for targeting `margin` on specific sides of a
+/// box. Use a `null` value to “skip” a side.
+///
+/// @argument {arglist} $values
+///   List of margin values, defined as CSS shorthand.
+///
+/// @example scss
+///   .element {
+///     @include margin(null auto);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     margin-left: auto;
+///     margin-right: auto;
+///   }
+///
+/// @example scss
+///   .element {
+///     @include margin(10px 3em 20vh null);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     margin-bottom: 20vh;
+///     margin-right: 3em;
+///     margin-top: 10px;
+///   }
+///
+/// @require {mixin} _directional-property
+
+@mixin margin($values...) {
+  @include _directional-property(margin, false, $values...);
+}
+
+@charset "UTF-8";
+
+/// Increments up or down a defined scale and returns an adjusted value. This
+/// helps establish consistent measurements and spacial relationships throughout
+/// your project. We provide a list of commonly used scales as
+/// [pre-defined variables][scales].
+///
+/// [scales]: https://github.com/thoughtbot/bourbon/blob/master/core/bourbon/settings/_scales.scss
+///
+/// @argument {number (unitless)} $increment
+///   How many steps to increment up or down the scale.
+///
+/// @argument {number (with unit) | list} $value [1em]
+///   The base value the scale starts at.
+///
+/// @argument {number (unitless)} $ratio [1.25]
+///   The ratio the scale is built on.
+///
+/// @return {number (with unit)}
+///
+/// @example scss
+///   .element {
+///     font-size: modular-scale(2);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     font-size: 1.5625em;
+///   }
+///
+/// @example scss
+///   .element {
+///     margin-right: modular-scale(3, 2em);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     margin-right: 3.90625em;
+///   }
+///
+/// @example scss
+///   .element {
+///     font-size: modular-scale(3, 1em 1.6em, $major-seventh);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     font-size: 3em;
+///   }
+///
+/// @example scss
+///   // Globally change the base ratio
+///   $bourbon: (
+///     "modular-scale-ratio": 1.2,
+///   );
+///
+///   .element {
+///     font-size: modular-scale(3);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     font-size: 1.728em;
+///   }
+///
+/// @require {function} _retrieve-bourbon-setting
+
+@function modular-scale(
+    $increment,
+    $value: _retrieve-bourbon-setting("modular-scale-base"),
+    $ratio: _retrieve-bourbon-setting("modular-scale-ratio")
+  ) {
+
+  $v1: nth($value, 1);
+  $v2: nth($value, length($value));
+  $value: $v1;
+
+  // scale $v2 to just above $v1
+  @while $v2 > $v1 {
+    $v2: ($v2 / $ratio); // will be off-by-1
+  }
+  @while $v2 < $v1 {
+    $v2: ($v2 * $ratio); // will fix off-by-1
+  }
+
+  // check AFTER scaling $v2 to prevent double-counting corner-case
+  $double-stranded: $v2 > $v1;
+
+  @if $increment > 0 {
+    @for $i from 1 through $increment {
+      @if $double-stranded and ($v1 * $ratio) > $v2 {
+        $value: $v2;
+        $v2: ($v2 * $ratio);
+      } @else {
+        $v1: ($v1 * $ratio);
+        $value: $v1;
+      }
+    }
+  }
+
+  @if $increment < 0 {
+    // adjust $v2 to just below $v1
+    @if $double-stranded {
+      $v2: ($v2 / $ratio);
+    }
+
+    @for $i from $increment through -1 {
+      @if $double-stranded and ($v1 / $ratio) < $v2 {
+        $value: $v2;
+        $v2: ($v2 / $ratio);
+      } @else {
+        $v1: ($v1 / $ratio);
+        $value: $v1;
+      }
+    }
+  }
+
+  @return $value;
+}
+
+@charset "UTF-8";
+
+/// Provides a quick method for targeting `padding` on specific sides of a
+/// box. Use a `null` value to “skip” a side.
+///
+/// @argument {arglist} $values
+///   List of padding values, defined as CSS shorthand.
+///
+/// @example scss
+///   .element-one {
+///     @include padding(null 1rem);
+///   }
+///
+///   // CSS Output
+///   .element-one {
+///     padding-left: 1rem;
+///     padding-right: 1rem;
+///   }
+///
+/// @example scss
+///   .element-two {
+///     @include padding(10vh null 10px 5%);
+///   }
+///
+///   // CSS Output
+///   .element-two {
+///     padding-bottom: 10px;
+///     padding-left: 5%;
+///     padding-top: 10vh;
+///   }
+///
+/// @require {mixin} _directional-property
+
+@mixin padding($values...) {
+  @include _directional-property(padding, false, $values...);
+}
+
+@charset "UTF-8";
+
+/// Provides a quick method for setting an element’s position. Use a `null`
+/// value to “skip” a side.
+///
+/// @argument {string} $position [relative]
+///   A CSS position value.
+///
+/// @argument {arglist} $coordinates [null]
+///   List of lengths, defined as CSS shorthand.
+///
+/// @example scss
+///   .element {
+///     @include position(absolute, 0 null null 10em);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     left: 10em;
+///     position: absolute;
+///     top: 0;
+///   }
+///
+/// @require {function} _is-length
+///
+/// @require {function} _unpack
+
+@mixin position(
+    $position: relative,
+    $coordinates: null
+  ) {
+
+  @if type-of($position) == list {
+    $coordinates: $position;
+    $position: relative;
+  }
+
+  $coordinates: _unpack($coordinates);
+
+  $offsets: (
+    top:    nth($coordinates, 1),
+    right:  nth($coordinates, 2),
+    bottom: nth($coordinates, 3),
+    left:   nth($coordinates, 4),
+  );
+
+  position: $position;
+
+  @each $offset, $value in $offsets {
+    @if _is-length($value) {
+      #{$offset}: $value;
+    }
+  }
+}
+
+@charset "UTF-8";
+
+/// Generates vendor prefixes.
+///
+/// @argument {string} $property
+///   Property to prefix.
+///
+/// @argument {string} $value
+///   Value to use.
+///
+/// @argument {list} $prefixes
+///   Vendor prefixes to output.
+///
+/// @example scss
+///   .element {
+///     @include prefixer(appearance, none, ("webkit", "moz"));
+///   }
+///
+///   // CSS Output
+///   .element {
+///     -webkit-appearance: none;
+///     -moz-appearance: none;
+///     appearance: none;
+///   }
+///
+/// @author Hugo Giraudel
+
+@mixin prefixer(
+    $property,
+    $value,
+    $prefixes: ()
+  ) {
+
+  @each $prefix in $prefixes {
+    #{"-" + $prefix + "-" + $property}: $value;
+  }
+  #{$property}: $value;
+}
+
+@charset "UTF-8";
+
+/// Mixes a color with black.
+///
+/// @argument {color} $color
+///
+/// @argument {number (percentage)} $percent
+///   The amount of black to be mixed in.
+///
+/// @return {color}
+///
+/// @example scss
+///   .element {
+///     background-color: shade(#ffbb52, 60%);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     background-color: #664a20;
+///   }
+
+@function shade(
+    $color,
+    $percent
+  ) {
+
+  @if not _is-color($color) {
+    @error "`#{$color}` is not a valid color for the `$color` argument in " +
+           "the `shade` mixin.";
+  } @else {
+    @return mix(#000, $color, $percent);
+  }
+}
+
+@charset "UTF-8";
+
+/// Sets the `width` and `height` of the element in one statement.
+///
+/// @argument {number (with unit) | string} $width
+///
+/// @argument {number (with unit) | string} $height [$width]
+///
+/// @example scss
+///   .first-element {
+///     @include size(2em);
+///   }
+///
+///   // CSS Output
+///   .first-element {
+///     width: 2em;
+///     height: 2em;
+///   }
+///
+/// @example scss
+///   .second-element {
+///     @include size(auto, 10em);
+///   }
+///
+///   // CSS Output
+///   .second-element {
+///     width: auto;
+///     height: 10em;
+///   }
+///
+/// @require {function} _is-size
+
+@mixin size(
+    $width,
+    $height: $width
+  ) {
+
+  @if _is-size($height) {
+    height: $height;
+  } @else {
+    @error "`#{$height}` is not a valid length for the `$height` argument " +
+           "in the `size` mixin.";
+  }
+
+  @if _is-size($width) {
+    width: $width;
+  } @else {
+    @error "`#{$width}` is not a valid length for the `$width` argument " +
+           "in the `size` mixin.";
+  }
+}
+
+@charset "UTF-8";
+
+/// Strips the unit from a number.
+///
+/// @argument {number} $value
+///
+/// @return {number (unitless)}
+///
+/// @example scss
+///   $dimension: strip-unit(10em);
+///
+///   // Output
+///   $dimension: 10;
+
+@function strip-unit($value) {
+  @return ($value / ($value * 0 + 1));
+}
+
+@charset "UTF-8";
+
+////
+/// @type list
+///
+/// @require {function} _assign-inputs
+///
+/// @require {variable} $_text-inputs-list
+////
+
+/// A list of all _text-based_ HTML inputs. Please note that you must
+/// interpolate the variable (`#{}`) to use it as a selector.
+///
+/// @example scss
+///   #{$all-text-inputs} {
+///     border: 1px solid #ccc;
+///   }
+///
+///   // CSS Output
+///   [type='color'],
+///   [type='date'],
+///   [type='datetime'],
+///   [type='datetime-local'],
+///   [type='email'],
+///   [type='month'],
+///   [type='number'],
+///   [type='password'],
+///   [type='search'],
+///   [type='tel'],
+///   [type='text'],
+///   [type='time'],
+///   [type='url'],
+///   [type='week'],
+///   input:not([type]),
+///   textarea {
+///     border: 1px solid #ccc;
+///   }
+
+$all-text-inputs: _assign-inputs($_text-inputs-list);
+
+/// A list of all _text-based_ HTML inputs with the `:active` pseudo-class
+/// applied. Please note that you must interpolate the variable (`#{}`) to use
+/// it as a selector.
+///
+/// @example scss
+///   #{$all-text-inputs-active} {
+///     border: 1px solid #aaa;
+///   }
+///
+///   // CSS Output
+///   [type='color']:active,
+///   [type='date']:active,
+///   [type='datetime']:active,
+///   [type='datetime-local']:active,
+///   [type='email']:active,
+///   [type='month']:active,
+///   [type='number']:active,
+///   [type='password']:active,
+///   [type='search']:active,
+///   [type='tel']:active,
+///   [type='text']:active,
+///   [type='time']:active,
+///   [type='url']:active,
+///   [type='week']:active,
+///   input:not([type]):active,
+///   textarea:active {
+///     border: 1px solid #aaa;
+///   }
+
+$all-text-inputs-active: _assign-inputs($_text-inputs-list, active);
+
+/// A list of all _text-based_ HTML inputs with the `:focus` pseudo-class
+/// applied. Please note that you must interpolate the variable (`#{}`) to use
+/// it as a selector.
+///
+/// @example scss
+///   #{$all-text-inputs-focus} {
+///     border: 1px solid #1565c0;
+///   }
+///
+///   // CSS Output
+///   [type='color']:focus,
+///   [type='date']:focus,
+///   [type='datetime']:focus,
+///   [type='datetime-local']:focus,
+///   [type='email']:focus,
+///   [type='month']:focus,
+///   [type='number']:focus,
+///   [type='password']:focus,
+///   [type='search']:focus,
+///   [type='tel']:focus,
+///   [type='text']:focus,
+///   [type='time']:focus,
+///   [type='url']:focus,
+///   [type='week']:focus,
+///   input:not([type]):focus,
+///   textarea:focus {
+///     border: 1px solid #1565c0;
+///   }
+
+$all-text-inputs-focus: _assign-inputs($_text-inputs-list, focus);
+
+/// A list of all _text-based_ HTML inputs with the `:hover` pseudo-class
+/// applied. Please note that you must interpolate the variable (`#{}`) to use
+/// it as a selector.
+///
+/// @example scss
+///   #{$all-text-inputs-hover} {
+///     border: 1px solid #aaa;
+///   }
+///
+///   // CSS Output
+///   [type='color']:hover,
+///   [type='date']:hover,
+///   [type='datetime']:hover,
+///   [type='datetime-local']:hover,
+///   [type='email']:hover,
+///   [type='month']:hover,
+///   [type='number']:hover,
+///   [type='password']:hover,
+///   [type='search']:hover,
+///   [type='tel']:hover,
+///   [type='text']:hover,
+///   [type='time']:hover,
+///   [type='url']:hover,
+///   [type='week']:hover,
+///   input:not([type]):hover,
+///   textarea:hover {
+///     border: 1px solid #aaa;
+///   }
+
+$all-text-inputs-hover: _assign-inputs($_text-inputs-list, hover);
+
+/// A list of all _text-based_ HTML inputs with the `:invalid` pseudo-class
+/// applied. Please note that you must interpolate the variable (`#{}`) to use
+/// it as a selector.
+///
+/// @example scss
+///   #{$all-text-inputs-invalid} {
+///     border: 1px solid #00f;
+///   }
+///
+///   // CSS Output
+///   [type='color']:invalid,
+///   [type='date']:invalid,
+///   [type='datetime']:invalid,
+///   [type='datetime-local']:invalid,
+///   [type='email']:invalid,
+///   [type='month']:invalid,
+///   [type='number']:invalid,
+///   [type='password']:invalid,
+///   [type='search']:invalid,
+///   [type='tel']:invalid,
+///   [type='text']:invalid,
+///   [type='time']:invalid,
+///   [type='url']:invalid,
+///   [type='week']:invalid,
+///   input:not([type]):invalid,
+///   textarea:invalid {
+///     border: 1px solid #00f;
+///   }
+
+$all-text-inputs-invalid: _assign-inputs($_text-inputs-list, invalid);
+
+@charset "UTF-8";
+
+// scss-lint:disable SpaceAfterComma, UnnecessaryMantissa, TrailingZero
+
+////
+/// CSS cubic-bezier timing functions.
+///
+/// @link http://goo.gl/p8u6SK
+///
+/// @type string
+////
+
+$ease-in-quad:      cubic-bezier(0.550,  0.085, 0.680, 0.530);
+$ease-in-cubic:     cubic-bezier(0.550,  0.055, 0.675, 0.190);
+$ease-in-quart:     cubic-bezier(0.895,  0.030, 0.685, 0.220);
+$ease-in-quint:     cubic-bezier(0.755,  0.050, 0.855, 0.060);
+$ease-in-sine:      cubic-bezier(0.470,  0.000, 0.745, 0.715);
+$ease-in-expo:      cubic-bezier(0.950,  0.050, 0.795, 0.035);
+$ease-in-circ:      cubic-bezier(0.600,  0.040, 0.980, 0.335);
+$ease-in-back:      cubic-bezier(0.600, -0.280, 0.735, 0.045);
+
+$ease-out-quad:     cubic-bezier(0.250,  0.460, 0.450, 0.940);
+$ease-out-cubic:    cubic-bezier(0.215,  0.610, 0.355, 1.000);
+$ease-out-quart:    cubic-bezier(0.165,  0.840, 0.440, 1.000);
+$ease-out-quint:    cubic-bezier(0.230,  1.000, 0.320, 1.000);
+$ease-out-sine:     cubic-bezier(0.390,  0.575, 0.565, 1.000);
+$ease-out-expo:     cubic-bezier(0.190,  1.000, 0.220, 1.000);
+$ease-out-circ:     cubic-bezier(0.075,  0.820, 0.165, 1.000);
+$ease-out-back:     cubic-bezier(0.175,  0.885, 0.320, 1.275);
+
+$ease-in-out-quad:  cubic-bezier(0.455,  0.030, 0.515, 0.955);
+$ease-in-out-cubic: cubic-bezier(0.645,  0.045, 0.355, 1.000);
+$ease-in-out-quart: cubic-bezier(0.770,  0.000, 0.175, 1.000);
+$ease-in-out-quint: cubic-bezier(0.860,  0.000, 0.070, 1.000);
+$ease-in-out-sine:  cubic-bezier(0.445,  0.050, 0.550, 0.950);
+$ease-in-out-expo:  cubic-bezier(1.000,  0.000, 0.000, 1.000);
+$ease-in-out-circ:  cubic-bezier(0.785,  0.135, 0.150, 0.860);
+$ease-in-out-back:  cubic-bezier(0.680, -0.550, 0.265, 1.550);
+
+@charset "UTF-8";
+
+/// Mixes a color with white.
+///
+/// @argument {color} $color
+///
+/// @argument {number (percentage)} $percent
+///   The amount of white to be mixed in.
+///
+/// @return {color}
+///
+/// @example scss
+///   .element {
+///     background-color: tint(#6ecaa6, 40%);
+///   }
+///
+///   // CSS Output
+///   .element {
+///     background-color: #a8dfc9;
+///   }
+
+@function tint(
+    $color,
+    $percent
+  ) {
+
+  @if not _is-color($color) {
+    @error "`#{$color}` is not a valid color for the `$color` argument in " +
+           "the `tint` mixin.";
+  } @else {
+    @return mix(#fff, $color, $percent);
+  }
+}
+
+@charset "UTF-8";
+
+/// Generates a triangle pointing in a specified direction.
+///
+/// @argument {string} $direction [up]
+///   The direction the triangle should point. Accepts `up`, `up-right`,
+///   `right`, `down-right`, `down`, `down-left`, `left` or `up-left`.
+///
+/// @argument {color} $color [currentColor]
+///   Color of the triangle.
+///
+/// @argument {number (with unit)} $width [1rem]
+///   Width of the triangle.
+///
+/// @argument {number (with unit)} $height [($width / 2)]
+///   Height of the triangle.
+///
+/// @example scss
+///   .element {
+///     &::before {
+///       @include triangle(up, #b25c9c, 2rem);
+///       content: "";
+///     }
+///   }
+///
+///   // CSS Output
+///   .element::before {
+///     border-style: solid;
+///     height: 0;
+///     width: 0;
+///     border-color: transparent transparent #b25c9c transparent;
+///     border-width: 0 1rem 1rem;
+///     content: "";
+///   }
+
+@mixin triangle(
+    $direction: up,
+    $color: currentColor,
+    $width: 1rem,
+    $height: ($width / 2)
+  ) {
+  @if not index(
+      "up" "up-right" "right" "down-right" "down" "down-left" "left" "up-left",
+      $direction
+    ) {
+    @error "Direction must be `up`, `up-right`, `right`, `down-right`, " +
+           "`down`, `down-left`, `left` or `up-left`.";
+  } @else if not _is-color($color) {
+    @error "`#{$color}` is not a valid color for the `$color` argument in " +
+           "the `triangle` mixin.";
+  } @else {
+    border-style: solid;
+    height: 0;
+    width: 0;
+
+    @if $direction == "up" {
+      border-color: transparent transparent $color;
+      border-width: 0 ($width / 2) $height;
+    } @else if $direction == "up-right" {
+      border-color: transparent $color transparent transparent;
+      border-width: 0 $width $width 0;
+    } @else if $direction == "right" {
+      border-color: transparent transparent transparent $color;
+      border-width: ($height / 2) 0 ($height / 2) $width;
+    } @else if $direction == "down-right" {
+      border-color: transparent transparent $color;
+      border-width: 0 0 $width $width;
+    } @else if $direction == "down" {
+      border-color: $color transparent transparent;
+      border-width: $height ($width / 2) 0;
+    } @else if $direction == "down-left" {
+      border-color: transparent transparent transparent $color;
+      border-width: $width 0 0 $width;
+    } @else if $direction == "left" {
+      border-color: transparent $color transparent transparent;
+      border-width: ($height / 2) $width ($height / 2) 0;
+    } @else if $direction == "up-left" {
+      border-color: $color transparent transparent;
+      border-width: $width $width 0 0;
+    }
+  }
+}
+
+@charset "UTF-8";
+
+/// Generates vendor prefixes for values.
+///
+/// @argument {string} $property
+///   Property to use.
+///
+/// @argument {string} $value
+///   Value to prefix.
+///
+/// @argument {list} $prefixes
+///   Vendor prefixes to output.
+///
+/// @example scss
+///   .element {
+///     @include value-prefixer(cursor, grab, ("webkit", "moz"));
+///   }
+///
+///   // CSS Output
+///   .element {
+///     cursor: -webkit-grab;
+///     cursor: -moz-grab;
+///     cursor: grab;
+///   }
+///
+/// @author Matthew Tobiasz
+
+@mixin value-prefixer(
+    $property,
+    $value,
+    $prefixes: ()
+  ) {
+
+  @each $prefix in $prefixes {
+    #{$property}: #{"-" + $prefix + "-" + $value};
+  }
+  #{$property}: $value;
+}
+
+@charset "UTF-8";
+
+/// Provides an easy way to change the `word-wrap` property.
+///
+/// @argument {string} $wrap [break-word]
+///   Value for the `word-break` property.
+///
+/// @example scss
+///   .wrapper {
+///     @include word-wrap(break-word);
+///   }
+///
+///   // CSS Output
+///   .wrapper {
+///     overflow-wrap: break-word;
+///     word-break: break-all;
+///     word-wrap: break-word;
+///   }
+
+@mixin word-wrap($wrap: break-word) {
+  overflow-wrap: $wrap;
+  word-wrap: $wrap;
+
+  @if $wrap == break-word {
+    word-break: break-all;
+  } @else {
+    word-break: $wrap;
+  }
+}
+
+/*============================================================================
+  Dependency-free breakpoint mixin
+    - http://blog.grayghostvisuals.com/sass/sass-media-query-mixin/
+==============================================================================*/
+$min: min-width;
+$max: max-width;
+@mixin at-query ($constraint, $viewport1, $viewport2:null) {
+  @if $constraint == $min {
+    @media screen and ($min: $viewport1) {
+      @content;
+    }
+  } @else if $constraint == $max {
+    @media screen and ($max: $viewport1) {
+      @content;
+    }
+  } @else {
+    @media screen and ($min: $viewport1) and ($max: $viewport2) {
+      @content;
+    }
+  }
+}
+$siteWidth: 1030px;
+$gutter: 30px;
+$gridGutter: 30px;
+$radius: 3px;
+
+$small: 480px;
+$medium: 768px;
+$large: 769px;
+
+$viewportIncrement: 1px;
+$postSmall: $small + $viewportIncrement;
+$preMedium: $medium - $viewportIncrement;
+$preLarge: $large - $viewportIncrement;
+
+/*================ The following are dependencies of csswizardry grid ================*/
+$breakpoints: (
+  'small' '(max-width: #{$small})',
+  'medium' '(min-width: #{$postSmall}) and (max-width: #{$medium})',
+  'medium-down' '(max-width: #{$medium})',
+  'large' '(min-width: #{$large})'
+);
+$breakpoint-has-widths: ('small', 'medium', 'medium-down', 'large');
+$breakpoint-has-push:  ('medium', 'medium-down', 'large');
+$breakpoint-has-pull:  ('medium', 'medium-down', 'large');
+/*================ Color variables ================*/
+$colorPrimary: {{ settings.color_primary }};
+$colorSecondary: {{ settings.color_secondary }};
+
+// Button colors
+$colorBtnPrimary: $colorPrimary;
+$colorBtnPrimaryHover: lighten($colorBtnPrimary, 10%);
+$colorBtnPrimaryActive: darken($colorBtnPrimaryHover, 10%);
+$colorBtnPrimaryText: {{ settings.color_button_primary_text }};
+
+$colorBtnSecondary: $colorSecondary;
+$colorBtnSecondaryHover: lighten($colorBtnSecondary, 10%);
+$colorBtnSecondaryActive: darken($colorBtnSecondaryHover, 10%);
+$colorBtnSecondaryText: {{ settings.color_button_secondary_text }};
+
+$colorBtnTertiary: {{ settings.color_body_bg }};
+$colorBtnTertiaryHover: $colorPrimary;
+$colorBtnTertiaryActive: darken($colorPrimary, 10%);
+$colorBtnTertiaryText: $colorPrimary;
+
+// Text link colors
+$colorLink: $colorPrimary;
+$colorLinkHover: lighten($colorPrimary, 15%);
+
+// Text colors
+$colorTextBody: {{ settings.color_body_text }};
+$colorTopBarText: {{ settings.color_topbar_text }};
+
+// Backgrounds
+$colorBody: {{ settings.color_body_bg }};
+$colorHeader: {{ settings.color_header_bg }};
+$colorTopBar: {{ settings.color_topbar_bg }};
+
+// Border colors
+$colorBorder: {{ settings.color_borders }};
+
+// Nav and dropdown link background
+$colorNavText: {{ settings.color_header_text }};
+
+// Site Footer
+$colorFooterBg: {{ settings.color_header_bg }};
+$colorFooterText: {{ settings.color_footer_text }};
+
+// Helper colors
+$disabledGrey: #f6f6f6;
+$disabledBorder: darken($disabledGrey, 25%);
+$errorRed: #d02e2e;
+$errorRedBg: #fff6f6;
+$successGreen: #56ad6a;
+$successGreenBg: #ecfef0;
+
+// Product review app
+$colorReviewStars: {{ settings.product_reviews_star_color }};
+*================ Typography variables ================*/
+{% if settings.type_base_family contains 'Google' %}
+  {% assign type_base_parts = settings.type_base_family | split: '_' %}
+  {% assign type_base_name = type_base_parts[1] %}
+  {% capture base_family %}"{{ type_base_name | split: ':' | first | replace: '+', ' ' }}"{% if type_base_parts.last == 'serif' %}, serif {% else %}, "HelveticaNeue", "Helvetica Neue", sans-serif{% endif %}{% endcapture %}
+{% else %}
+  {% assign base_family = settings.type_base_family %}
+{% endif %}
+
+{% if settings.type_header_family contains 'Google' %}
+  {% assign type_header_parts = settings.type_header_family | split: '_' %}
+  {% assign type_header_name = type_header_parts[1] %}
+  {% capture header_family %}"{{ type_header_name | split: ':' | first | replace: '+', ' ' }}"{% if type_header_parts.last == 'serif' %}, serif {% else %}, "HelveticaNeue", "Helvetica Neue", sans-serif{% endif %}{% endcapture %}
+  {% assign header_weight = type_header_parts[2] %}
+{% else %}
+  {% assign header_family = settings.type_header_family %}
+  {% assign header_weight = 700 %}
+{% endif %}
+
+// Body Font
+$bodyFontStack: {{ base_family }};
+$baseFontSize: {{ settings.type_base_size }};
+
+// Header Font
+$headerFontStack: {{ header_family }};
+$headerFontWeight: {{ header_weight }};
+/*================ Variables, theme settings, and Sass mixins ================*/
+/*================ Global | Sass Mixins ================*/
+@mixin clearfix() {
+  &:after {
+    content: "";
+    display: table;
+    clear: both; }
+  *zoom: 1;
+}
+
+@mixin prefix($property, $value) {
+  -webkit-#{$property}: #{$value};
+  -moz-#{$property}: #{$value};
+  -ms-#{$property}: #{$value};
+  -o-#{$property}: #{$value};
+  #{$property}: #{$value};
+}
+
+@mixin transition($transition: 0.1s all) {
+  @include prefix('transition', #{$transition});
+}
+
+@mixin gradient($from, $to, $fallback) {
+  background: $fallback;
+  background: -moz-linear-gradient(top, $from 0%, $to 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,$from), color-stop(100%,$to));
+  background: -webkit-linear-gradient(top, $from 0%, $to 100%);
+  background: -o-linear-gradient(top, $from 0%, $to 100%);
+  background: -ms-linear-gradient(top, $from 0%, $to 100%);
+  background: linear-gradient(top bottom, $from 0%, $to 100%);
+}
+
+@mixin backface($visibility: hidden) {
+  @include prefix('backface-visibility', #{$visibility});
+}
+
+@mixin box-sizing($box-sizing: border-box) {
+  -webkit-box-sizing: #{$box-sizing};
+  -moz-box-sizing: #{$box-sizing};
+  box-sizing: #{$box-sizing};
+}
+
+@function em($target, $context: $baseFontSize) {
+  @if $target == 0 {
+    @return 0;
+  }
+  @return $target / $context + 0em;
+}
+
+@function color-control($color) {
+  @if (lightness( $color ) > 50) {
+    @return #000;
+  }
+  @else {
+    @return #fff;
+  }
+}
+/*================ Global | Normalize ================*/
+*, input, :before, :after {
+  @include box-sizing();
+}
+
+html, body {
+  padding: 0;
+  margin: 0;
+}
+
+article, aside, details, figcaption, figure, footer, header, hgroup, main, nav, section, summary {
+  display: block;
+}
+
+audio, canvas, progress, video {
+  display: inline-block;
+  vertical-align: baseline;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  height: auto;
+}
+
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+/*============================================================================
+  #OOCSS Media Object
+    - http://www.stubbornella.org/content/2010/06/25/the-media-object-saves-hundreds-of-lines-of-code/
+==============================================================================*/
+.media,
+.media-flex {
+  overflow: hidden;
+  _overflow: visible;
+  zoom: 1;
+}
+
+.media-img {
+  float: left;
+  margin-right: $gutter;
+}
+
+.media-img-right {
+  float: right;
+  margin-left: $gutter;
+}
+
+.media-img img,
+.media-img-right img {
+  display: block;
+}
+/*================ Partials | Helper Classes ================*/
+.clearfix {
+  &:after {
+    content: "";
+    display: table;
+    clear: both; }
+  *zoom: 1;
+}
+
+.display-table {
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.display-table-cell {
+  display: table-cell;
+  vertical-align: middle;
+  float: none;
+}
+
+@include at-query ($min, $large) {
+  .large--display-table {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  .large--display-table-cell {
+    display: table-cell;
+    vertical-align: middle;
+    float: none;
+  }
+}
+/*================ Partials | Icons ================*/
+@font-face {
+  font-family: 'icons';
+  src: url('{{ "icons.eot" | asset_url }}');
+  src: url('{{ "icons.eot" | asset_url }}#iefix') format("embedded-opentype"),
+       url('{{ "icons.woff" | asset_url }}') format("woff"),
+       url('{{ "icons.ttf" | asset_url }}') format("truetype"),
+       url('{{ "icons.svg" | asset_url }}#timber-icons') format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+$socialIconFontStack: 'icons';
+
+.icon-fallback-text .icon {
+  display: none;
+
+  .supports-fontface & {
+    display: inline-block;
+  }
+}
+
+/*============================================================================
+  A generic way to visually hide content while
+  remaining accessible to screen readers (h5bp.com)
+==============================================================================*/
+.supports-fontface .icon-fallback-text .fallback-text {
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+  position: absolute;
+  height: 1px;
+  width: 1px;
+}
+
+.icon:before {
+  display: none;
+}
+
+.supports-fontface .icon:before {
+  display: inline;
+  font-family: $socialIconFontStack;
+  text-decoration: none;
+  speak: none; // future fallback, limited in effect currently
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/*================ Icon mapping ================*/
+.icon-american_express:before { content: "\41"; }
+.icon-arrow-down:before { content: "\34"; }
+.icon-bitcoin:before { content: "\42"; }
+.icon-cart:before { content: "\5b"; }
+.icon-cirrus:before { content: "\43"; }
+.icon-diners_club:before { content: "\63"; }
+.icon-discover:before { content: "\44"; }
+.icon-dankort:before { content: "\64"; }
+.icon-facebook:before { content: "\66"; }
+.icon-fancy:before { content: "\46"; }
+.icon-google:before { content: "\67"; }
+.icon-google_wallet:before { content: "\47"; }
+.icon-grid-view:before { content: "\e603"; }
+.icon-hamburger:before { content: "\e600"; }
+.icon-instagram:before { content: "\69"; }
+.icon-interac:before { content: "\49"; }
+.icon-jcb:before { content: "\4a"; }
+.icon-list-view:before { content: "\e604"; }
+.icon-maestro:before { content: "\6d"; }
+.icon-master:before { content: "\4d"; }
+.icon-minus:before { content: "\e602"; }
+.icon-paypal:before { content: "\50"; }
+.icon-pinterest:before { content: "\70"; }
+.icon-plus:before { content: "\e605"; }
+.icon-rss:before { content: "\72"; }
+.icon-search:before { content: "\73"; }
+.icon-stripe:before { content: "\53"; }
+.icon-tumblr:before { content: "\74"; }
+.icon-twitter:before { content: "\54"; }
+.icon-vimeo:before { content: "\76"; }
+.icon-visa:before { content: "\56"; }
+.icon-x:before { content: "\78"; }
+.icon-youtube:before { content: "\79"; }
+
+.payment-icons {
+  @include prefix('user-select', 'none');
+  cursor: default;
+
+  li {
+    margin: 0 ($gutter / 4) ($gutter / 4);
+    color: {{ settings.color_footer_social_link }};
+    cursor: default;
+  }
+
+  .icon {
+    font-size: 30px;
+    line-height: 30px;
+  }
+
+  .fallback-text {
+    text-transform: capitalize;
+  }
+}
+
+.social-icons li {
+  margin: 0 ($gutter / 3) ($gutter / 2);
+  vertical-align: middle;
+
+  @include at-query ($min, $postSmall) {
+    margin-left: 0;
+  }
+
+  .icon {
+    font-size: 30px;
+    line-height: 26px;
+  }
+
+  a {
+    color: {{ settings.color_footer_social_link }};
+
+    &:hover {
+      color: darken({{ settings.color_footer_social_link }}, 10%);
+    }
+  }
+}
+/*================ Partials | Images, SVG, and iframes ================*/
+img {
+  border: 0 none;
+}
+
+svg:not(:root) {
+  overflow: hidden;
+}
+
+img.auto,
+.grid__item img,
+.grid__item iframe {
+  max-width: 100%;
+}
+
+.video-wrapper {
+  position: relative;
+  overflow: hidden;
+  max-width: 100%;
+  padding-bottom: 56.25%;
+  height: 0;
+  height: auto;
+
+  iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.table-wrapper {
+  max-width: 100%;
+  overflow: auto;
+}
+/*================ Partials | Layout Styles ================*/
+html {
+  background-color: $colorFooterBg;
+}
+
+body {
+  background-color: $colorBody;
+}
+
+.wrapper {
+  @include clearfix();
+  max-width: $siteWidth;
+  margin: 0 auto;
+  padding: 0 ($gridGutter / 2);
+
+  @include at-query ($min, $small) {
+    padding: 0 $gridGutter;
+  }
+}
+
+.main-content {
+  display: block;
+  margin-top: $gutter * 2;
+  padding-bottom: $gutter * 2;
+}
+
+hr {
+  clear: both;
+  border-top: solid $colorBorder;
+  border-width: 1px 0 0;
+  margin: $gutter 0;
+  height: 0;
+
+  &.hr--small {
+    margin: ($gutter / 2) 0;
+  }
+
+  &.hr--clear {
+    border-top-color: transparent;
+  }
+}
+/*================ Partials | Links and Buttons ================*/
+a,
+.text-link {
+  color: $colorLink;
+  text-decoration: none;
+  background: transparent;
+
+  &:hover,
+  &:focus {
+    color: $colorLinkHover;
+  }
+}
+
+button {
+  overflow: visible;
+}
+
+button[disabled],
+html input[disabled] {
+  cursor: default;
+}
+
+.btn {
+  display: inline-block;
+  padding: 8px 16px;
+  margin: 0;
+  line-height: 1.42;
+  font-size: em(15px);
+  font-weight: bold;
+  text-decoration: none;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  @include prefix('user-select', 'none');
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border-radius: $radius;
+
+  /*================ Set primary button colors - can override later ================*/
+  background-color: $colorBtnPrimary;
+  color: $colorBtnPrimaryText;
+
+  &:hover {
+    background-color: $colorBtnPrimaryHover;
+    color: $colorBtnPrimaryText;
+  }
+
+  &:active,
+  &:focus {
+   background-color: $colorBtnPrimaryActive;
+   color: $colorBtnPrimaryText;
+  }
+
+  &[disabled],
+  &.disabled {
+    cursor: default;
+    color: $disabledBorder;
+    background-color: $disabledGrey;
+  }
+}
+
+.btn--secondary,
+input.btn--secondary {
+  @extend .btn;
+  background-color: $colorBtnSecondary;
+
+  &:hover {
+    background-color: $colorBtnSecondaryHover;
+    color: $colorBtnSecondaryText;
+  }
+
+  &:active,
+  &:focus {
+   background-color: $colorBtnSecondaryActive;
+   color: $colorBtnSecondaryText;
+  }
+}
+
+.btn--small {
+  padding: 4px 5px;
+  font-size: em(12px);
+}
+
+.btn--large {
+  padding: 12px 15px;
+  font-size: em(16px);
+}
+
+.btn--full {
+  width: 100%;
+}
+
+.btn--tertiary,
+input.btn--tertiary {
+  @extend .btn;
+  margin: 0;
+  background-color: $colorBtnTertiary;
+  color: $colorBtnTertiaryText;
+  border: 1px solid $colorBorder;
+
+  &:hover {
+    opacity: 1;
+    background-color: $colorBtnTertiaryHover;
+  }
+
+  &:active,
+  &:focus {
+   background-color: $colorBtnTertiaryActive;
+  }
+}
+
+select.btn--tertiary {
+  padding: 6px 28px 6px 10px;
+  font-size: 0.85em;
+
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: $colorBtnTertiary;
+    color: $colorBtnTertiaryText;
+  }
+}
+
+/*================ Force an input/button to look like a text link ================*/
+.text-link {
+  display: inline;
+  border: 0 none;
+  padding: 0;
+  margin: 0;
+}
+/*================ Partials | Lists ================*/
+ul, ol {
+  margin: 0 0 $gutter;
+  padding: 0;
+}
+
+ul { list-style: none outside; }
+ol { list-style: decimal; }
+ul ul, ul ol,
+ol ol, ol ul { margin: 4px 0 5px 20px; }
+li { margin-bottom: 0.25em; }
+
+ol, ul.square, ul.disc { margin-left: 20px; }
+ul.square { list-style: square outside; }
+ul.disc { list-style: disc outside; }
+ol.alpha { list-style: lower-alpha outside; }
+
+.inline-list li {
+  display: inline-block;
+  margin-bottom: 0;
+}
+/*================ Partials | Tables ================*/
+table {
+  width: 100%;
+  margin-bottom: 1em;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.table-wrap {
+  max-width: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+th {
+  font-weight: bold;
+}
+
+th, td {
+  text-align: left;
+  padding: $gutter / 2;
+  border: 1px solid $colorBorder;
+}
+/*================ Partials | Typography styles ================*/
+body,
+input,
+textarea,
+button,
+select {
+  font-size: $baseFontSize;
+  line-height: 1.8;
+  font-family: $bodyFontStack;
+  color: $colorTextBody;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: $headerFontStack;
+  font-weight: $headerFontWeight;
+  margin: 0 0 ($gutter / 2);
+  line-height: 1.4;
+
+  a {
+    text-decoration: none;
+    font-weight: inherit;
+  }
+}
+
+/*================ Use em() Sass function to declare font-size ================*/
+h1 {
+  font-size: em(36px);
+}
+
+h2 {
+  font-size: em(28px);
+}
+
+h3 {
+  font-size: em(22px);
+}
+
+h4 {
+  font-size: em(20px);
+}
+
+h5 {
+  font-size: em(16px);
+}
+
+h6 {
+  font-size: em(14px);
+}
+
+
+.h1 { @extend h1; }
+.h2 { @extend h2; }
+.h3 { @extend h3; }
+.h4 { @extend h4; }
+.h5 { @extend h5; }
+.h6 { @extend h6; }
+
+p {
+  margin: 0 0 ($gutter / 2) 0;
+
+  img {
+    margin: 0;
+  }
+}
+
+em {
+  font-style: italic;
+}
+
+b, strong {
+  font-weight: bold;
+}
+
+small {
+  font-size: 0.9em;
+}
+
+sup, sub {
+  position: relative;
+  font-size: 60%;
+  vertical-align: baseline;
+}
+sup {
+  top: -0.5em;
+}
+
+sub {
+  bottom: -0.5em;
+}
+
+blockquote {
+  font-size: 1.125em;
+  line-height: 1.45;
+  font-style: italic;
+  margin: 0 0 $gutter;
+  padding: ($gutter / 2) $gutter;
+  border-left: 1px solid $colorBorder;
+
+  p {
+    margin-bottom: 0;
+
+    & + cite {
+      margin-top: $gutter / 2;
+    }
+  }
+
+  cite {
+    display: block;
+    font-size: 0.75em;
+
+    &:before {
+      content: "\2014 \0020";
+    }
+  }
+}
+
+code, pre {
+  background-color: #faf7f5;
+  font-family: Consolas,monospace;
+  font-size: 1em;
+  border: 0 none;
+  padding: 0 2px;
+  color: #51ab62;
+}
+
+pre {
+  overflow: auto;
+  padding: $gutter / 2;
+  margin: 0 0 $gutter;
+}
+/*================ Partials | Forms ================*/
+form {
+  margin-bottom: $gutter;
+}
+
+input,
+textarea,
+button,
+select {
+  font-size: 1em;
+}
+
+button,
+input[type="text"],
+input[type="search"],
+input[type="password"],
+input[type="email"],
+input[type="file"],
+input[type="number"],
+input[type="tel"],
+input[type="submit"],
+textarea {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+input,
+textarea,
+select,
+fieldset {
+  border-radius: $radius;
+  max-width: 100%;
+
+  &.input-full {
+    width: 100%;
+  }
+}
+
+input,
+select,
+textarea {
+  padding: 8px 10px;
+  line-height: 1.42;
+}
+
+fieldset {
+  border: 1px solid $colorBorder;
+  padding: $gutter / 2;
+}
+
+legend {
+  border: 0;
+  padding: 0;
+}
+
+optgroup {
+  font-weight: bold;
+}
+
+input {
+  display: inline-block;
+  width: auto;
+}
+
+button,
+input[type="submit"] {
+  cursor: pointer;
+}
+
+input[type="submit"] {
+  @extend .btn;
+}
+
+/*================ Input width and border ================*/
+input[type="text"],
+input[type="search"],
+input[type="password"],
+input[type="email"],
+input[type="file"],
+input[type="number"],
+input[type="tel"],
+textarea,
+select {
+  border: 1px solid $colorBorder;
+  width: 100%;
+  max-width: 100%;
+  display: block;
+  margin: 0 0 1em;
+  color: #333;
+
+  &:focus {
+    border: 1px solid darken($colorBorder, 10%);
+  }
+
+  &[disabled],
+  &.disabled {
+    cursor: default;
+    background-color: $disabledGrey;
+    border-color: $disabledBorder;
+  }
+}
+
+textarea {
+  min-height: 100px;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+select {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  background-position: right center;
+  background: {
+    image: url('{{ "ico-select.svg" | asset_url }}');
+    repeat: no-repeat;
+    position: right 10px center;
+    color: #fff;
+  }
+  padding-right: 28px;
+  text-indent: 0.01px;
+  text-overflow: '';
+  cursor: pointer;
+
+  /*================ Hide the svg arrow in IE9 and below ================*/
+  .ie9 &,
+  .lt-ie9 & {
+    padding-right: 10px;
+    background-image: none;
+  }
+}
+
+// Force option color (affects IE only)
+option {
+  color: #000;
+  background-color: #fff;
+}
+
+select::-ms-expand {
+  display: none;
+}
+
+/*================ Form labels ================*/
+label,
+legend {
+  display: block;
+  margin-bottom: 2px;
+  font-weight: bold;
+
+  &.inline {
+    display: inline;
+  }
+
+  .form-horizontal &.label--hidden,
+  &.label--hidden {
+    height: 0;
+    width: 0;
+    margin-bottom: 0;
+    overflow: hidden;
+
+    .ie9 &,
+    .lt-ie9 & {
+      height: auto;
+      width: auto;
+      margin-bottom: 2px;
+      overflow: visible;
+    }
+  }
+}
+
+/*================ We don't want the same label treatment for checkboxes/radios ================*/
+input[type="checkbox"] + label,
+input[type="radio"] + label {
+  font-weight: normal;
+}
+
+label[for] {
+  cursor: pointer;
+}
+
+.label-hint {
+  color: #999;
+}
+
+/*================ Horizontal Form ================*/
+form.form-horizontal,
+.form-horizontal {
+  margin-bottom: 0;
+
+  input[type="text"],
+  input[type="search"],
+  input[type="password"],
+  input[type="email"],
+  input[type="file"],
+  input[type="number"],
+  input[type="tel"],
+  textarea,
+  select,
+  label {
+    display: inline-block;
+    margin-bottom: 0;
+    width: auto;
+  }
+}
+
+/*================ Error styles ================*/
+input[type="text"],
+input[type="search"],
+input[type="password"],
+input[type="email"],
+input[type="file"],
+input[type="number"],
+input[type="tel"],
+textarea {
+  &.error {
+    border-color: $errorRed;
+    background-color: $errorRedBg;
+    color: $errorRed;
+  }
+}
+
+label.error {
+  color: $errorRed;
+}
+
+
+/*================ Input Group ================*/
+.input-group {
+  position: relative;
+  display: table;
+  border-collapse: separate;
+
+  .input-group-field:first-child,
+  .input-group-btn:first-child,
+  .input-group-btn:first-child > .btn,
+  input[type="hidden"]:first-child + .input-group-field,
+  input[type="hidden"]:first-child + .input-group-btn > .btn {
+    border-radius: $radius 0 0 $radius;
+  }
+
+  .input-group-field:last-child,
+  .input-group-btn:last-child > .btn {
+   border-radius: 0 $radius $radius 0;
+  }
+
+  input {
+    // Nasty Firefox hack for inputs http://davidwalsh.name/firefox-buttons
+    &::-moz-focus-inner {
+      border: 0;
+      padding: 0;
+      margin-top: -1px;
+      margin-bottom: -1px;
+    }
+  }
+}
+
+.input-group-field,
+.input-group-btn {
+  display: table-cell;
+  vertical-align: middle;
+  margin: 0;
+}
+
+.input-group .btn,
+.input-group .input-group-field {
+  height: 37px;
+}
+
+.input-group .input-group-field {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.input-group-btn {
+  position: relative;
+  white-space: nowrap;
+  width: 1%;
+  padding: 0;
+}
+
+/*================ Search bar ================*/
+.search-bar {
+  max-width: 50%;
+
+  @include at-query ($max, $medium) {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 100%;
+  }
+}
+/*============================================================================
+  Grid Setup
+    1. Allow the grid system to be used on lists.
+    2. Remove any margins and paddings that might affect the grid system.
+    3. Apply a negative `margin-left` to negate the columns' gutters.
+==============================================================================*/
+#{$class-type}grid,
+#{$class-type}grid-uniform {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  margin-left: -$gridGutter;
+}
+
+#{$class-type}grid__item {
+  float: left;
+  min-height: 1px;
+  padding-left: $gridGutter;
+  vertical-align: top;
+  @if $mobile-first == true {
+    width: 100%;
+  }
+  @include box-sizing();
+}
+
+/*============================================================================
+  Reversed grids allow you to structure your source in the opposite
+  order to how your rendered layout will appear.
+==============================================================================*/
+#{$class-type}grid--rev {
+  @extend #{$class-type}grid;
+  direction: rtl;
+  text-align: left;
+
+  > #{$class-type}grid__item {
+    direction: ltr;
+    text-align: left;
+    float: right;
+  }
+}
+
+/* Gutterless grids have all the properties of regular grids, minus any spacing. */
+#{$class-type}grid--full {
+  @extend #{$class-type}grid;
+  margin-left: 0;
+
+  > #{$class-type}grid__item {
+    padding-left: 0;
+  }
+}
+/*============================================================================
+  PULL
+    - Pull classes, to move grid items back to the left by certain amounts
+==============================================================================*/
+@mixin pull-setup($namespace: "") {
+  /* Whole */
+  #{$class-type}pull--#{$namespace}one-whole       { right: 100%; @include silent-relative(); }
+
+  /* Halves */
+  #{$class-type}pull--#{$namespace}one-half        { right: 50%; @include silent-relative(); }
+
+  /* Thirds */
+  #{$class-type}pull--#{$namespace}one-third       { right: 33.333%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}two-thirds      { right: 66.666%; @include silent-relative(); }
+
+  /* Quarters */
+  #{$class-type}pull--#{$namespace}one-quarter     { right: 25%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}two-quarters    { right: 50%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}three-quarters  { right: 75%; @include silent-relative(); }
+
+  /* Fifths */
+  #{$class-type}pull--#{$namespace}one-fifth       { right: 20%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}two-fifths      { right: 40%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}three-fifths    { right: 60%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}four-fifths     { right: 80%; @include silent-relative(); }
+
+  /* Sixths */
+  #{$class-type}pull--#{$namespace}one-sixth       { right: 16.666%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}two-sixths      { right: 33.333%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}three-sixths    { right: 50%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}four-sixths     { right: 66.666%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}five-sixths     { right: 83.333%; @include silent-relative(); }
+
+  /* Eighths */
+  #{$class-type}pull--#{$namespace}one-eighth      { right: 12.5%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}two-eighths     { right: 25%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}three-eighths   { right: 37.5%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}four-eighths    { right: 50%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}five-eighths    { right: 62.5%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}six-eighths     { right: 75%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}seven-eighths   { right: 87.5%; @include silent-relative(); }
+
+  /* Tenths */
+  #{$class-type}pull--#{$namespace}one-tenth       { right: 10%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}two-tenths      { right: 20%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}three-tenths    { right: 30%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}four-tenths     { right: 40%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}five-tenths     { right: 50%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}six-tenths      { right: 60%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}seven-tenths    { right: 70%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}eight-tenths    { right: 80%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}nine-tenths     { right: 90%; @include silent-relative(); }
+
+  /* Twelfths */
+  #{$class-type}pull--#{$namespace}one-twelfth     { right: 8.333%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}two-twelfths    { right: 16.666%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}three-twelfths  { right: 25%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}four-twelfths   { right: 33.333%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}five-twelfths   { right: 41.666%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}six-twelfths    { right: 50%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}seven-twelfths  { right: 58.333%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}eight-twelfths  { right: 66.666%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}nine-twelfths   { right: 75%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}ten-twelfths    { right: 83.333%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}eleven-twelfths { right: 91.666%; @include silent-relative(); }
+}
+
+@if $pull == true {
+  [class*="pull--"]{ position:relative; }
+
+  @include pull-setup();
+
+  @if $responsive == true {
+    @each $name in $breakpoint-has-pull {
+      @include grid-media-query($name) {
+        @include pull-setup('#{$name}--');
+      }
+    }
+  }
+}
+/*============================================================================
+  PUSH
+    - Push classes, to move grid items over to the right by certain amounts
+==============================================================================*/
+@mixin push-setup($namespace: "") {
+  /* Whole */
+  #{$class-type}push--#{$namespace}one-whole       { left: 100%; @include silent-relative(); }
+
+  /* Halves */
+  #{$class-type}push--#{$namespace}one-half        { left: 50%; @include silent-relative(); }
+
+  /* Thirds */
+  #{$class-type}push--#{$namespace}one-third       { left: 33.333%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}two-thirds      { left: 66.666%; @include silent-relative(); }
+
+  /* Quarters */
+  #{$class-type}push--#{$namespace}one-quarter     { left: 25%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}two-quarters    { left: 50%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}three-quarters  { left: 75%; @include silent-relative(); }
+
+  /* Fifths */
+  #{$class-type}push--#{$namespace}one-fifth       { left: 20%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}two-fifths      { left: 40%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}three-fifths    { left: 60%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}four-fifths     { left: 80%; @include silent-relative(); }
+
+  /* Sixths */
+  #{$class-type}push--#{$namespace}one-sixth       { left: 16.666%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}two-sixths      { left: 33.333%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}three-sixths    { left: 50%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}four-sixths     { left: 66.666%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}five-sixths     { left: 83.333%; @include silent-relative(); }
+
+  /* Eighths */
+  #{$class-type}push--#{$namespace}one-eighth      { left: 12.5%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}two-eighths     { left: 25%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}three-eighths   { left: 37.5%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}four-eighths    { left: 50%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}five-eighths    { left: 62.5%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}six-eighths     { left: 75%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}seven-eighths   { left: 87.5%; @include silent-relative(); }
+
+  /* Tenths */
+  #{$class-type}push--#{$namespace}one-tenth       { left: 10%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}two-tenths      { left: 20%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}three-tenths    { left: 30%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}four-tenths     { left: 40%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}five-tenths     { left: 50%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}six-tenths      { left: 60%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}seven-tenths    { left: 70%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}eight-tenths    { left: 80%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}nine-tenths     { left: 90%; @include silent-relative(); }
+
+  /* Twelfths */
+  #{$class-type}push--#{$namespace}one-twelfth     { left: 8.333%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}two-twelfths    { left: 16.666%; @include silent-relative();  }
+  #{$class-type}push--#{$namespace}three-twelfths  { left: 25%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}four-twelfths   { left: 33.333%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}five-twelfths   { left: 41.666%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}six-twelfths    { left: 50%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}seven-twelfths  { left: 58.333%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}eight-twelfths  { left: 66.666%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}nine-twelfths   { left: 75%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}ten-twelfths    { left: 83.333%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}eleven-twelfths { left: 91.666%; @include silent-relative(); }
+}
+
+@if $push == true {
+  [class*="push--"]{ position:relative; }
+
+  @include push-setup();
+
+  @if $responsive == true {
+    @each $name in $breakpoint-has-push {
+      @include grid-media-query($name) {
+        @include push-setup('#{$name}--');
+      }
+    }
+  }
+}
+/*============================================================================
+  #Grid Setup
+    - Based on csswizardry grid, but with floated columns, a fixed gutter size, and BEM classes
+    - Breakpoints defined above, under #Breakpoint and Grid Variables
+    - Note the inclusion of .grid-uniform to take care of clearfixes on evenly sized grid items
+==============================================================================*/
+$responsive:         true;
+$mobile-first:       true;
+$use-silent-classes: false;
+$push:               true;
+$pull:               false;
+
+/* Force clearfix on grids */
+.grid,
+.grid-uniform {
+  @include clearfix;
+}
+
+/* Manual grid__item clearfix */
+.grid__item.clear {
+  clear: both;
+}
+
+$class-type: unquote(".");
+
+@if $use-silent-classes == true {
+  $class-type: unquote("%");
+}
+
+@mixin grid-media-query($media-query) {
+  $breakpoint-found: false;
+
+  @each $breakpoint in $breakpoints {
+    $name: nth($breakpoint, 1);
+    $declaration: nth($breakpoint, 2);
+
+    @if $media-query == $name and $declaration {
+      $breakpoint-found: true;
+
+      @media only screen and #{$declaration} {
+        @content;
+      }
+    }
+  }
+
+  @if $breakpoint-found == false {
+    @warn "Breakpoint '#{$media-query}' does not exist";
+  }
+}
+
+/*============================================================================
+  Drop relative positioning into silent classes which can't take advantage of
+  the `[class*="push--"]` and `[class*="pull--"]` selectors.
+==============================================================================*/
+@mixin silent-relative() {
+  @if $use-silent-classes == true {
+    position:relative;
+  }
+}
+/*============================================================================
+  WIDTHS
+    - Create width classes, prefixed by the specified namespace.
+==============================================================================*/
+@mixin device-type($namespace:"") {
+  /** Whole */
+  #{$class-type}#{$namespace}one-whole       { width: 100%; }
+
+  /* Halves */
+  #{$class-type}#{$namespace}one-half        { width: 50%; }
+
+  /* Thirds */
+  #{$class-type}#{$namespace}one-third       { width: 33.333%; }
+  #{$class-type}#{$namespace}two-thirds      { width: 66.666%; }
+
+  /* Quarters */
+  #{$class-type}#{$namespace}one-quarter     { width: 25%; }
+  #{$class-type}#{$namespace}two-quarters    { width: 50%; }
+  #{$class-type}#{$namespace}three-quarters  { width: 75%; }
+
+  /* Fifths */
+  #{$class-type}#{$namespace}one-fifth       { width: 20%; }
+  #{$class-type}#{$namespace}two-fifths      { width: 40%; }
+  #{$class-type}#{$namespace}three-fifths    { width: 60%; }
+  #{$class-type}#{$namespace}four-fifths     { width: 80%; }
+
+  /* Sixths */
+  #{$class-type}#{$namespace}one-sixth       { width: 16.666%; }
+  #{$class-type}#{$namespace}two-sixths      { width: 33.333%; }
+  #{$class-type}#{$namespace}three-sixths    { width: 50%; }
+  #{$class-type}#{$namespace}four-sixths     { width: 66.666%; }
+  #{$class-type}#{$namespace}five-sixths     { width: 83.333%; }
+
+  /* Eighths */
+  #{$class-type}#{$namespace}one-eighth      { width: 12.5%; }
+  #{$class-type}#{$namespace}two-eighths     { width: 25%; }
+  #{$class-type}#{$namespace}three-eighths   { width: 37.5%; }
+  #{$class-type}#{$namespace}four-eighths    { width: 50%; }
+  #{$class-type}#{$namespace}five-eighths    { width: 62.5%; }
+  #{$class-type}#{$namespace}six-eighths     { width: 75%; }
+  #{$class-type}#{$namespace}seven-eighths   { width: 87.5%; }
+
+  /* Tenths */
+  #{$class-type}#{$namespace}one-tenth       { width: 10%; }
+  #{$class-type}#{$namespace}two-tenths      { width: 20%; }
+  #{$class-type}#{$namespace}three-tenths    { width: 30%; }
+  #{$class-type}#{$namespace}four-tenths     { width: 40%; }
+  #{$class-type}#{$namespace}five-tenths     { width: 50%; }
+  #{$class-type}#{$namespace}six-tenths      { width: 60%; }
+  #{$class-type}#{$namespace}seven-tenths    { width: 70%; }
+  #{$class-type}#{$namespace}eight-tenths    { width: 80%; }
+  #{$class-type}#{$namespace}nine-tenths     { width: 90%; }
+
+  /* Twelfths */
+  #{$class-type}#{$namespace}one-twelfth     { width: 8.333%; }
+  #{$class-type}#{$namespace}two-twelfths    { width: 16.666%; }
+  #{$class-type}#{$namespace}three-twelfths  { width: 25%; }
+  #{$class-type}#{$namespace}four-twelfths   { width: 33.333%; }
+  #{$class-type}#{$namespace}five-twelfths   { width: 41.666% }
+  #{$class-type}#{$namespace}six-twelfths    { width: 50%; }
+  #{$class-type}#{$namespace}seven-twelfths  { width: 58.333%; }
+  #{$class-type}#{$namespace}eight-twelfths  { width: 66.666%; }
+  #{$class-type}#{$namespace}nine-twelfths   { width: 75%; }
+  #{$class-type}#{$namespace}ten-twelfths    { width: 83.333%; }
+  #{$class-type}#{$namespace}eleven-twelfths { width: 91.666%; }
+}
+
+/*================ Clearfix helper on uniform grids ================*/
+@mixin clearfix-helper($namespace:"") {
+  .grid-uniform {
+    #{$class-type}#{$namespace}one-half:nth-child(2n+1),
+    #{$class-type}#{$namespace}one-third:nth-child(3n+1),
+    #{$class-type}#{$namespace}one-quarter:nth-child(4n+1),
+    #{$class-type}#{$namespace}one-fifth:nth-child(5n+1),
+    #{$class-type}#{$namespace}one-sixth:nth-child(6n+1),
+    #{$class-type}#{$namespace}two-sixths:nth-child(3n+1),
+    #{$class-type}#{$namespace}three-sixths:nth-child(2n+1),
+    #{$class-type}#{$namespace}two-eighths:nth-child(4n+1),
+    #{$class-type}#{$namespace}four-eighths:nth-child(2n+1),
+    #{$class-type}#{$namespace}five-tenths:nth-child(2n+1),
+    #{$class-type}#{$namespace}one-twelfth:nth-child(12n+1),
+    #{$class-type}#{$namespace}two-twelfths:nth-child(6n+1),
+    #{$class-type}#{$namespace}three-twelfths:nth-child(4n+1),
+    #{$class-type}#{$namespace}four-twelfths:nth-child(3n+1),
+    #{$class-type}#{$namespace}six-twelfths:nth-child(2n+1)    { clear: both; }
+  }
+}
+
+/*================ Helper show/hide classes around our breakpoints ================*/
+@mixin device-helper($namespace:"") {
+  #{$class-type}#{$namespace}show        { display: block!important; }
+  #{$class-type}#{$namespace}hide        { display: none!important; }
+
+  #{$class-type}#{$namespace}text-left   { text-align: left!important; }
+  #{$class-type}#{$namespace}text-right  { text-align: right!important; }
+  #{$class-type}#{$namespace}text-center { text-align: center!important; }
+
+  #{$class-type}#{$namespace}left        { float: left!important; }
+  #{$class-type}#{$namespace}right       { float: right!important; }
+}
+
+/*================ Our regular, non-responsive width and helper classes ================*/
+@include device-type();
+@include device-helper();
+
+/*================ Our responsive classes, if we have enabled them ================*/
+@if $responsive == true {
+  @each $name in $breakpoint-has-widths {
+    @include grid-media-query($name) {
+      @include device-type('#{$name}--');
+      @include device-helper('#{$name}--');
+      @include clearfix-helper('#{$name}--');
+    }
+  }
+}
+/*================ Module | Breadcrumbs and Tag Sorting ================*/
+.breadcrumb,
+.tags {
+  color: $colorPrimary;
+
+  a {
+    color: $colorTextBody;
+
+    &:hover,
+    &:focus,
+    &:active {
+      color: $colorPrimary;
+    }
+  }
+}
+
+.breadcrumb {
+  margin-bottom: $gutter / 2.5;
+  color: $colorPrimary;
+
+  a,
+  span {
+    display: inline;
+    padding-right: 7px;
+    margin-right: 7px;
+
+    &:first-child {
+      padding-left: 0;
+    }
+  }
+}
+
+.breadcrumb__sep {
+  font-size: 1.4em;
+  line-height: 1;
+}
+
+.tags {
+  color: $colorPrimary;
+
+  a {
+    display: inline-block;
+    padding: 5px 7px 5px 0;
+    margin-right: 12px;
+  }
+}
+
+.tag--active a {
+  color: $colorPrimary;
+}
+/*================ Module | Footer ================*/
+.site-footer {
+  background-color: $colorFooterBg;
+  padding-top: $gutter;
+  padding-bottom: 20px;
+  color: $colorFooterText;
+
+  form {
+    margin-bottom: 0;
+  }
+
+  p {
+    margin-bottom: 10px;
+  }
+
+  ul {
+    margin-bottom: 0;
+  }
+
+  @include at-query ($min, $large) {
+    padding-top: $gutter * 2;
+  }
+
+  @include at-query ($max, $medium) {
+    .grid__item {
+      margin-bottom: $gutter;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+.site-footer__links a {
+  color: $colorFooterText;
+
+  &:hover,
+  &:active {
+    color: $colorLink;
+  }
+}
+/*================ Module | Site Nav and Dropdowns ================*/
+.site-nav {
+  font-size: em(16px);
+  cursor: default;
+  margin: 0 auto;
+  text-align: center;
+
+  li {
+    margin: 0;
+    display: block;
+  }
+
+  & > li {
+    position: relative;
+    display: inline-block;
+
+    &:first-child a {
+      padding-left: 0;
+    }
+
+    &:last-child a {
+      padding-right: 0;
+    }
+  }
+
+  @include at-query ($min, $large) {
+    margin: 0;
+    text-align: right;
+  }
+}
+
+.site-nav__link {
+  display: block;
+  text-decoration: none;
+  padding: $gutter / 2;
+  white-space: nowrap;
+  color: $colorNavText;
+
+  &:hover,
+  &:active,
+  &:focus {
+    color: $colorPrimary;
+  }
+
+  .site-nav--active & {
+    font-weight: bold;
+  }
+
+  .icon-arrow-down {
+    font-size: 0.7em;
+    color: $colorPrimary;
+  }
+}
+
+/*================ Dropdowns ================*/
+.site-nav__dropdown {
+  display: none;
+  position: absolute;
+  left: 0;
+  margin: 0;
+  text-align: left;
+  z-index: 20;
+  font-size: 0.85em;
+  box-shadow: 0px 1px 1px rgba(0,0,0,0.1);
+
+  .supports-no-touch .site-nav--has-dropdown:hover &,
+  .site-nav--has-dropdown.nav-hover &,
+  .nav-focus + & {
+    display: block;
+  }
+
+  .site-nav__link {
+    background-color: $colorHeader;
+    font-weight: normal;
+    padding: 7px 20px 7px 15px;
+
+    &:hover,
+    &:active,
+    &:focus {
+      color: $colorPrimary;
+    }
+  }
+}
+
+/*================ Search bar in header ================*/
+.nav-search {
+  position: relative;
+  padding: 7px 0;
+
+  @include at-query ($max, $medium) {
+    padding: 0 0 ($gutter / 2);
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .input-group,
+  .input-group-field {
+    margin-bottom: 0;
+  }
+}
+
+/*================ Header message (theme setting) ================*/
+.header-message {
+  text-align: center;
+  margin: ($gutter / 2) 0 0;
+  line-height: 1;
+
+  @include at-query($min, $large) {
+    margin-bottom: $gutter / 2;
+  }
+}
+/*================ Module | Notes and Form Feedback ================*/
+.note,
+.errors {
+  border-radius: $radius;
+  padding: 6px 12px;
+  margin-bottom: $gutter / 2;
+  border: 1px solid transparent;
+  font-size: 0.9em;
+  text-align: left;
+
+  ul,
+  ol {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  li:last-child {
+    margin-bottom: 0;
+  }
+
+  p {
+    margin-bottom: 0;
+  }
+}
+
+.note {
+  border-color: $colorBorder;
+}
+
+.errors {
+  ul {
+    list-style: disc outside;
+    margin-left: 20px;
+  }
+}
+
+.form-success {
+  color: $successGreen;
+  background-color: $successGreenBg;
+  border-color: $successGreen;
+
+  a {
+    color: $successGreen;
+    text-decoration: underline;
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
+}
+
+.form-error,
+.errors {
+  color: $errorRed;
+  background-color: $errorRedBg;
+  border-color: $errorRed;
+
+  a {
+    color: $errorRed;
+    text-decoration: underline;
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
+}
+/*================ Module | Pagination ================*/
+.pagination {
+  margin-bottom: 1em;
+}
+
+.pagination-custom {
+  display: inline-block;
+  padding-left: 0;
+  margin: 0 0 $gutter;
+  border-radius: $radius;
+}
+
+.pagination-custom > li {
+  display: inline;
+}
+
+.pagination-custom > li > a,
+.pagination-custom > li > span {
+  position: relative;
+  float: left;
+  padding: 5px 10px;
+  margin-left: -1px;
+  line-height: 1.42;
+  text-decoration: none;
+}
+
+.pagination-custom > li:first-child > a,
+.pagination-custom > li:first-child > span {
+  margin-left: 0;
+}
+
+.pagination-custom > .active > a,
+.pagination-custom > .active > span,
+.pagination-custom > .active > a:hover,
+.pagination-custom > .active > span:hover,
+.pagination-custom > .active > a:focus,
+.pagination-custom > .active > span:focus {
+  z-index: 2;
+  cursor: default;
+  color: $colorTextBody;
+}
+
+.pagination-custom > .disabled > span,
+.pagination-custom > .disabled > a,
+.pagination-custom > .disabled > a:hover,
+.pagination-custom > .disabled > a:focus {
+  color: $colorTextBody;
+  cursor: not-allowed;
+}
+
+.pagination-custom-lg > li > a,
+.pagination-custom-lg > li > span {
+  padding: 10px 16px;
+  font-size: em(18px);
+}
+
+.pagination-custom-sm > li > a,
+.pagination-custom-sm > li > span {
+  padding: 5px 10px;
+  font-size: em(12px);
+}
+/*================ Module | Rich Text Editor ================*/
+.rte {
+
+  // Add some top margin to headers from the rich text editor
+  h1, h2, h3, h4, h5, h6 {
+    margin-top: 2em;
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
+  > div {
+    margin-bottom: $gutter / 2;
+  }
+
+  ul, ol {
+    margin-left: 35px;
+  }
+
+  ul {
+    @extend ul.disc;
+  }
+
+  li {
+    margin-bottom: 0.4em;
+  }
+}
+
+.rte--header {
+  margin-bottom: $gutter;
+}
+/*================ Module | Section Headers ================*/
+.section-header {
+  text-align: center;
+  margin-bottom: $gutter / 2;
+  border-bottom: 3px solid $colorBorder;
+}
+
+.section-header--large {
+  margin-bottom: $gutter;
+}
+
+.section-header--breadcrumb {
+  margin-bottom: $gutter / 2;
+}
+
+.section-header__title--left,
+.section-header__link--right {
+  padding-bottom: $gutter / 2.5;
+  margin-bottom: 0;
+}
+
+.section-header__link--right {
+  margin-top: $gutter / 2;
+}
+
+@include at-query ($min, $large) {
+  .section-header {
+    display: table;
+    width: 100%;
+    text-align: left;
+  }
+
+  .section-header__title--left {
+    display: table-cell;
+    vertical-align: middle;
+
+    h1, h2, h3, h4,
+    .h1, .h2, .h3, .h4 {
+      margin-bottom: 0;
+    }
+  }
+
+  .section-header__link--right {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: right;
+    width: 335px;
+    margin-top: 0;
+
+    @include at-query ($max, $medium) {
+      margin-bottom: $gutter;
+    }
+  }
+}
+
+.section-header__link--right {
+
+  .form-horizontal {
+    display: inline-block;
+  }
+
+  .form-horizontal,
+  .collection-view {
+    vertical-align: middle;
+  }
+
+  select,
+  option {
+    color: $colorLink;
+  }
+
+  @include at-query ($min, $postSmall) {
+    label + select,
+    .collection-view {
+      margin-left: $gutter / 2;
+    }
+  }
+}
+
+.collection-view {
+  @extend .btn--tertiary;
+  display: none;
+  padding: 0;
+  height: 33px;
+  overflow: hidden;
+
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: $colorBtnTertiary;
+    color: $colorBtnTertiaryText;
+  }
+
+  /*================ Only show on larger screens ================*/
+  @include at-query ($min, $large) {
+    display: inline-block;
+  }
+}
+
+.change-view {
+  display: block;
+  background: none;
+  border: 0 none;
+  float: left;
+  padding: 0 9px;
+  margin: 0;
+  color: $colorBorder;
+  line-height: 33px; // height of .collection-view
+
+  &:hover,
+  &:focus {
+    color: $colorPrimary;
+  }
+}
+
+.change-view--active {
+  cursor: default;
+  color: $colorPrimary;
+}
+
+.view-more {
+  clear: both;
+  display: block;
+  font-size: 0.85em;
+  text-align: center;
+  margin-top: $gutter / 2;
+
+  @include at-query($min, $large) {
+    display: none;
+  }
+}
+/*================ Module | Site Header ================*/
+.site-header {
+  padding: 40px 0;
+  background-color: $colorHeader;
+
+  @include at-query ($min, $large) {
+    padding: $gutter 0;
+
+    .large--display-table {
+      min-height: 86px;
+    }
+  }
+
+  @include at-query ($min, $large) {
+    .grid {
+      display: table;
+      table-layout: fixed;
+      width: 100%;
+
+      > .grid__item {
+        float: none;
+        display: table-cell;
+        vertical-align: middle;
+      }
+    }
+  }
+}
+
+.site-header__logo {
+  text-align: center;
+  margin: 0 auto;
+  max-width: 100%;
+
+  a {
+    color: $colorNavText;
+    max-width: {{ settings.logo_max_width }}px;
+    margin: 0 auto;
+  }
+
+  a,
+  a:hover,
+  a:focus {
+    text-decoration: none;
+  }
+
+  a, img {
+    display: block;
+  }
+
+  img {
+    margin: 0 auto;
+  }
+}
+
+.site-header--text-links {
+  margin-bottom: 0;
+}
+/*================ Templates | Blog and Comments ================*/
+.comment {
+  margin-bottom: $gutter;
+
+  & + & {
+    border-top: 1px solid $colorBorder;
+    padding-top: $gutter;
+  }
+}
+
+.meta-sep {
+  position: relative;
+  top: -1px;
+  padding: 0 5px;
+  font-size: 0.7em;
+}
+
+.blog-date {
+  margin-top: -0.5em;
+}
+/*================ Templates | Cart Page ================*/
+.cart__row {
+  position: relative;
+  padding-top: $gutter;
+
+  & + & {
+    margin-top: $gutter;
+    border-top: 1px solid $colorBorder;
+  }
+
+  &:first-child {
+    margin-top: 0;
+  }
+
+  &:first-child {
+    padding-top: 0;
+    border-top: 0 none;
+  }
+
+  .js-qty {
+    margin: 0;
+  }
+}
+
+@include at-query ($min, $large) {
+  .cart__row--table-large {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+
+    .grid__item {
+      display: table-cell;
+      vertical-align: middle;
+      float: none;
+    }
+  }
+}
+
+.cart__image {
+  display: block;
+
+  img {
+    display: block;
+  }
+}
+
+.cart__subtotal {
+  margin: 0 0 0 ($gutter / 3);
+  display: inline;
+}
+
+.cart__mini-labels {
+  display: block;
+  margin: ($gutter / 3) 0;
+  font-size: em(12px);
+
+  @include at-query ($min, $large) {
+    display: none;
+  }
+}
+
+.cart__remove {
+  display: block;
+}
+
+.cart__note-add.is-hidden {
+  display: none;
+}
+
+.cart__note {
+  display: none;
+
+  &.is-active {
+    display: block;
+  }
+}
+
+.cart__additional_checkout {
+  margin: ($gutter / 2) 0 0;
+
+  input {
+    padding: 0;
+  }
+
+  .google-wallet-button-holder {
+    display: inline-block;
+    vertical-align: 10px;
+  }
+}
+/*================ Templates | Product Page ================*/
+.product-single__variants {
+  display: none;
+
+  .no-js & {
+    display: block;
+  }
+}
+
+.product-single__photos {
+  margin-bottom: $gutter / 2;
+}
+
+.product-single__photos,
+.product-single__thumbnails {
+  a, img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+  }
+}
+
+.product-single__hero {
+  .grid__item {
+    display: inline-block;
+    float: none;
+    vertical-align: middle;
+  }
+
+  @include at-query ($min, $large) {
+    .grid__item + .grid__item {
+      margin-left: -5px;
+    }
+  }
+}
+
+.product-single__thumbnails {
+  margin-left: -$gutter / 2;
+  margin-bottom: -$gutter / 2;
+
+  .grid__item {
+    padding-left: $gutter / 2;
+  }
+
+  li {
+    margin-bottom: $gutter / 2;
+  }
+}
+
+.product-single__prices {
+  margin-bottom: $gutter / 2;
+}
+
+.product-single__price {
+  color: $colorPrimary;
+  font-size: em(30px);
+  font-weight: $headerFontWeight;
+}
+
+.product-single__sale-price {
+  opacity: 0.7;
+  margin-left: 6px;
+  font-size: em(24px);
+  font-weight: $headerFontWeight;
+}
+
+.product-single__quantity {
+  margin-bottom: $gutter / 2;
+
+  &.is-hidden {
+    display: none;
+  }
+
+  .quantity-selector,
+  .js-qty {
+    display: inline-block;
+  }
+
+  .js-qty {
+    margin-left: $gutter / 2;
+  }
+}
+
+.js-qty__adjust,
+.ajaxcart__qty-adjust {
+  @extend .btn--tertiary;
+  top: 2px;
+  bottom: 2px;
+  padding: 4px 8px;
+}
+
+/*================ Review tab switcher ================*/
+.tab-switch__nav {
+  padding: 0;
+  list-style: none;
+}
+
+.tab-switch__trigger {
+  display: block;
+  color: $colorTextBody;
+  font-weight: normal;
+  margin-right: $gutter / 2;
+
+  &:hover,
+  &:active {
+    font-weight: normal;
+  }
+
+  &.is-active {
+    font-weight: bold;
+    color: $colorTextBody;
+  }
+}
+
+.tab-switch__content {
+  display: block;
+
+  &.is-hidden {
+    display: none;
+  }
+}
+/*============================================================================
+  #Breakpoint
+==============================================================================*/
+$viewportIncrement: 1px;
+
+$small: 480px;
+$medium: 768px;
+$large: 769px;
+/*============================================================================
+  #Grid Variables
+==============================================================================*/
+$postSmall: $small + $viewportIncrement;
+$preMedium: $medium - $viewportIncrement;
+$preLarge: $large - $viewportIncrement;
+
+$gutter: 30px;
+/*============================================================================
+  Dependency-free breakpoint mixin
+// http://blog.grayghostvisuals.com/sass/sass-media-query-mixin/
+==============================================================================*/
+$min: min-width;
+$max: max-width;
+@mixin at-query ($constraint, $viewport1, $viewport2:null) {
+  @if $constraint == $min {
+    @media screen and ($min: $viewport1) {
+      @content;
+    }
+  } @else if $constraint == $max {
+    @media screen and ($max: $viewport1) {
+      @content;
+    }
+  } @else {
+    @media screen and ($min: $viewport1) and ($max: $viewport2) {
+      @content;
+    }
+  }
+}
+
+/*============================================================================
+  Sass Helpers
+==============================================================================*/
+@mixin prefix($property, $value) {
+  -webkit-#{$property}: #{$value};
+  -moz-#{$property}: #{$value};
+  -ms-#{$property}: #{$value};
+  -o-#{$property}: #{$value};
+  #{$property}: #{$value};
+}
+
+@mixin transform-origin($origin) {
+  @include prefix('transform-origin', #{$origin});
+}
+
+@mixin transform-style($style: preserve-3d) {
+  @include prefix('transform-style', #{$style});
+}
+
+@mixin perspective($perspective) {
+  @include prefix('perspective', #{$perspective});
+}
+
+@mixin backface($visibility: hidden) {
+  @include prefix('backface-visibility', #{$visibility});
+}
+
+@mixin box-sizing($box-sizing: border-box) {
+  -webkit-box-sizing: #{$box-sizing};
+  -moz-box-sizing: #{$box-sizing};
+  box-sizing: #{$box-sizing};
+}
+
+@mixin transform($transform) {
+  @include prefix('transform', #{$transform});
+}
+
+@mixin transition($transition: 0.1s all) {
+  @include prefix('transition', #{$transition});
+}
+
+@mixin clearfix() {
+  &:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
+@function color-control($color) {
+  @if (lightness( $color ) > 40) {
+    @return #000;
+  }
+  @else {
+    @return #fff;
+  }
+}
+/*============================================================================
+  Ajaxify Colours
+  Add your theme colors in here, or create new styles.
+    - If creating new styles, you may have to restyle text, headers and links
+==============================================================================*/
+$colorBody: {{ settings.color_body_bg }};
+$colorTextBody: {{ settings.color_body_text }};
+$colorBorder: {{ settings.color_borders }};
+
+/*============================================================================
+  Ajaxify Cart - General
+==============================================================================*/
+.ajaxcart__content {
+  position: relative;
+  background-color: $colorBody;
+  @include perspective(1000px);
+  @include transform-style(preserve-3d);
+  @include transition(all 450ms cubic-bezier(0.57,.06,.05,.95));
+  padding-top: $gutter;
+  padding-bottom: $gutter;
+  overflow: hidden;
+
+  .is-visible & {
+    @include transition(all 550ms cubic-bezier(0.57, 0.06, 0.05, 0.95));
+  }
+
+  form {
+    margin-bottom: 0;
+  }
+
+  @include at-query ($max, $medium) {
+    padding-top: 15px;
+    padding-bottom: 15px;
+  }
+
+  .cart__header-labels {
+    display: none;
+
+    & + .cart__row {
+      margin-top: 0;
+      border-top: 0 none;
+    }
+  }
+}
+
+// Row and column spacing
+.ajaxcart__inner {
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.ajaxcart__product {
+  position: relative;
+  padding: 10px 0;
+
+  &:first-child {
+    padding-top: 0;
+  }
+}
+
+.ajaxcart__product,
+.cart__row {
+  max-height: 500px;
+  visibility: visible;
+
+  &.is-removed {
+    overflow: hidden;
+    opacity: 0;
+    padding: 0;
+    margin: -1px 0 0 0;
+    visibility: hidden;
+    @include transform('rotateX(-92deg)');
+    @include transform-origin(top);
+    @include backface(hidden);
+    @include transition(all 450ms cubic-bezier(0.57,.06,.05,.95));
+    max-height: 0;
+  }
+}
+
+.ajaxcart__row {
+  clear: both;
+  @include clearfix;
+}
+
+.ajaxcart__product-image {
+  display: block;
+  overflow: hidden;
+  margin-bottom: 15px;
+
+  img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+  }
+}
+/*============================================================================
+  #Quantity Selectors in the Ajax Cart
+==============================================================================*/
+.ajaxcart__qty {
+  @extend .js-qty;
+  display: inline-block;
+  margin: 0;
+
+  .is-loading & {
+    opacity: 0.5;
+    @include transition(none);
+  }
+}
+
+.ajaxcart__qty-adjust {
+  @extend .js-qty__adjust;
+}
+
+.ajaxcart__qty--plus {
+  @extend .js-qty__adjust--plus;
+}
+
+.ajaxcart__qty--minus {
+  @extend .js-qty__adjust--minus;
+}
+/*============================================================================
+  General Styles
+==============================================================================*/
+@include at-query ($max, $small) {
+  body.ajaxcart--is-visible {
+    overflow: hidden;
+  }
+}
+
+.ajaxcart__flip-loader {
+  display: none;
+  opacity: 0;
+  position: absolute;
+  right: -24px;
+  top: 50%;
+  margin-top: -5px;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  @include transition(opacity 0.1s);
+  background-repeat: no-repeat;
+  background-image: url(data:image/gif;base64,R0lGODlhEAAQAPYAAP///8zMzPX19enp6d7e3tjY2NnZ2eHh4evr6/f39+zs7NPT09PT09XV1dbW1tjY2ODg4PDw8NHR0eLi4vr6+vr6+vLy8ufn59vb297e3vHx8fT09NfX19DQ0Ofn5+3t7d7e3uTk5Pj4+Obm5s7OzuDg4Orq6uDg4O/v79nZ2c3Nze7u7unp6dDQ0M3Nzfn5+fz8/OPj4+Xl5fz8/OXl5e3t7f39/f39/fHx8fPz8/z8/Pb29u7u7vv7+/X19fj4+Pf39/T09PLy8vHx8fj4+Pb29vv7+/b29uTk5O/v7+/v79ra2tzc3N3d3d/f39jY2NfX1/Ly8uPj49XV1fr6+tTU1Ofn593d3dTU1NHR0evr69vb28/Pz+bm5t/f39bW1vPz8/T09Pn5+fDw8OTk5Ojo6Ovr69zc3Ojo6Nra2tra2tLS0uzs7M/Pz87Ozu3t7czMzOrq6tPT08/Pz9fX1+Li4tXV1c3NzeLi4tLS0tzc3OHh4eXl5QAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAAHjYAAgoOEhYUbIykthoUIHCQqLoI2OjeFCgsdJSsvgjcwPTaDAgYSHoY2FBSWAAMLE4wAPT89ggQMEbEzQD+CBQ0UsQA7RYIGDhWxN0E+ggcPFrEUQjuCCAYXsT5DRIIJEBgfhjsrFkaDERkgJhswMwk4CDzdhBohJwcxNB4sPAmMIlCwkOGhRo5gwhIGAgAh+QQJCgAAACwAAAAAEAAQAAAHjIAAgoOEhYU7A1dYDFtdG4YAPBhVC1ktXCRfJoVKT1NIERRUSl4qXIRHBFCbhTKFCgYjkII3g0hLUbMAOjaCBEw9ukZGgidNxLMUFYIXTkGzOmLLAEkQCLNUQMEAPxdSGoYvAkS9gjkyNEkJOjovRWAb04NBJlYsWh9KQ2FUkFQ5SWqsEJIAhq6DAAIBACH5BAkKAAAALAAAAAAQABAAAAeJgACCg4SFhQkKE2kGXiwChgBDB0sGDw4NDGpshTheZ2hRFRVDUmsMCIMiZE48hmgtUBuCYxBmkAAQbV2CLBM+t0puaoIySDC3VC4tgh40M7eFNRdH0IRgZUO3NjqDFB9mv4U6Pc+DRzUfQVQ3NzAULxU2hUBDKENCQTtAL9yGRgkbcvggEq9atUAAIfkECQoAAAAsAAAAABAAEAAAB4+AAIKDhIWFPygeEE4hbEeGADkXBycZZ1tqTkqFQSNIbBtGPUJdD088g1QmMjiGZl9MO4I5ViiQAEgMA4JKLAm3EWtXgmxmOrcUElWCb2zHkFQdcoIWPGK3Sm1LgkcoPrdOKiOCRmA4IpBwDUGDL2A5IjCCN/QAcYUURQIJIlQ9MzZu6aAgRgwFGAFvKRwUCAAh+QQJCgAAACwAAAAAEAAQAAAHjIAAgoOEhYUUYW9lHiYRP4YACStxZRc0SBMyFoVEPAoWQDMzAgolEBqDRjg8O4ZKIBNAgkBjG5AAZVtsgj44VLdCanWCYUI3txUPS7xBx5AVDgazAjC3Q3ZeghUJv5B1cgOCNmI/1YUeWSkCgzNUFDODKydzCwqFNkYwOoIubnQIt244MzDC1q2DggIBACH5BAkKAAAALAAAAAAQABAAAAeJgACCg4SFhTBAOSgrEUEUhgBUQThjSh8IcQo+hRUbYEdUNjoiGlZWQYM2QD4vhkI0ZWKCPQmtkG9SEYJURDOQAD4HaLuyv0ZeB4IVj8ZNJ4IwRje/QkxkgjYz05BdamyDN9uFJg9OR4YEK1RUYzFTT0qGdnduXC1Zchg8kEEjaQsMzpTZ8avgoEAAIfkECQoAAAAsAAAAABAAEAAAB4iAAIKDhIWFNz0/Oz47IjCGADpURAkCQUI4USKFNhUvFTMANxU7KElAhDA9OoZHH0oVgjczrJBRZkGyNpCCRCw8vIUzHmXBhDM0HoIGLsCQAjEmgjIqXrxaBxGCGw5cF4Y8TnybglprLXhjFBUWVnpeOIUIT3lydg4PantDz2UZDwYOIEhgzFggACH5BAkKAAAALAAAAAAQABAAAAeLgACCg4SFhjc6RhUVRjaGgzYzRhRiREQ9hSaGOhRFOxSDQQ0uj1RBPjOCIypOjwAJFkSCSyQrrhRDOYILXFSuNkpjggwtvo86H7YAZ1korkRaEYJlC3WuESxBggJLWHGGFhcIxgBvUHQyUT1GQWwhFxuFKyBPakxNXgceYY9HCDEZTlxA8cOVwUGBAAA7AAAAAAAAAAAA);
+
+  .flip--is-loading & {
+    display: block;
+    opacity: 1;
+  }
+}
+
+form[action="/cart/add"],
+form[action^="/cart/add"] {
+  @include clearfix;
+}
+/*============================================================================
+  #Quantity Selectors
+==============================================================================*/
+.js-qty {
+  position: relative;
+  margin-bottom: 1em;
+  max-width: 100px;
+  min-width: 75px;
+  overflow: visible;
+  @include backface(hidden);
+
+  input[type="text"] {
+    display: block;
+    border-color: transparent;
+    background: none;
+    color: inherit;
+    text-align: center;
+    width: 100%;
+    padding: 5px 25px;
+    margin: 0;
+  }
+}
+
+.js-qty__adjust {
+  cursor: pointer;
+  position: absolute;
+  display: block;
+  top: -1px;
+  bottom: -1px;
+  border: 0 none;
+  background: none;
+  text-align: center;
+  overflow: hidden;
+  -webkit-user-select: none;
+  -moz-user-select:    none;
+  -ms-user-select:     none;
+  -o-user-select:      none;
+  user-select:         none;
+  @include transition(all 0.2s ease-out);
+
+  &:hover,
+  &:focus {
+    opacity: 0.6;
+  }
+
+  &:active {
+    opacity: 1;
+  }
+}
+
+.js-qty__adjust--plus {
+  right: 0;
+}
+
+.js-qty__adjust--minus {
+  left: 0;
+}
+/*============================================================================
+  Ajaxify Flip
+==============================================================================*/
+.flip {
+  display: block;
+  float: left;
+  position: relative;
+  @include perspective(600px);
+}
+
+.flip__front,
+.flip__back {
+  @include transform-style(preserve-3d);
+  @include transition(all 0.3s);
+  @include backface(hidden);
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+
+  &:focus {
+    outline: 0 none;
+  }
+}
+
+.flip__front {
+  @include transform-origin(100% 0);
+
+  .is-flipped & {
+    @include transform('rotateX(92deg) translateY(-50%)');
+  }
+}
+
+.flip__back {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 100%;
+  opacity: 0;
+  text-align: center;
+  background-color: #464646;
+  @include box-sizing();
+  @include transform('rotateX(-90deg) translateY(50%)');
+  @include transform-origin(0 100%);
+
+  .is-flipped & {
+    opacity: 1;
+    @include transform('rotateX(0deg)');
+  }
+}
+
+// Backup for no transforms
+.flip.no-transforms {
+  .flip__back {
+    display: none;
+  }
+
+  &.is-flipped {
+    .flip__back {
+      display: block;
+    }
+  }
+}
+
+.flip__extra {
+  display: inline;
+  position: relative;
+  padding: 2px 10px;
+  opacity: 0;
+  visibility: hidden;
+  overflow: visible;
+  white-space: nowrap;
+  z-index: 5;
+  top: 4px;
+  line-height: 34px;
+  @include transition(opacity 450ms cubic-bezier(0.57,.06,.05,.95));
+
+  .is-flipped + & {
+    opacity: 1;
+    visibility: visible;
+    @include transition(opacity 650ms cubic-bezier(0.57, 0.06, 0.05, 0.95) 750ms);
+  }
+}
+
+.flip__cart {
+  display: inline-block;
+  padding: 0 8px;
+}
+
+.flip__checkout {
+  margin: 0;
+}
+/*============================================================================
+  Ajaxify Modal
+==============================================================================*/
+.ajaxcart--modal {
+  position: absolute;
+  top: 170px;
+  left: -200%;
+  margin-left: -500px; // overridden with JS
+  width: 100%;
+  max-width: 760px;
+  height: auto;
+  z-index: 99999999;
+  visibility: hidden;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  @include transition('left 0s linear 700ms, box-shadow 600ms cubic-bezier(0.47, 0.5, 0, 0.95) 400ms, margin-top 200ms ease-in-out');
+
+  // Short screens
+  @media only screen and (max-height:645px) {
+    top: 70px;
+  }
+
+  // Medium-down screens
+  @include at-query ($max, $medium) {
+    max-width: 90%;
+  }
+
+  // Small screens
+  @include at-query ($max, $small) {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    margin: 0!important;
+    max-height: none;
+    max-width: none;
+  }
+
+  .ajaxcart__content {
+    padding-left: $gutter;
+    padding-right: $gutter;
+
+    // Medium-down screens
+    @include at-query ($max, $medium) {
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+
+    // Small screens
+    @include at-query ($max, $small) {
+      padding-bottom: 60px;
+      min-height: 100%;
+    }
+  }
+
+  &.is-visible {
+    visibility: visible;
+    left: 50%;
+    @include transition('left 0s linear, box-shadow 600ms cubic-bezier(0.47, 0.5, 0, 0.95) 400ms, margin-top 200ms ease-in-out');
+
+    // Large screens
+    @include at-query ($min, $large) {
+      box-shadow: 0px 10px 80px rgba(0,0,0,.25);
+    }
+
+    // Small screens
+    @include at-query ($max, $small) {
+      left: 0;
+    }
+  }
+
+  .ajaxcart__row {
+
+    & > div {
+      padding-left: 20px;
+
+      &:first-child {
+        padding-left: 0;
+      }
+    }
+  }
+
+  .ajaxcart__product {
+    @include transform(none);
+  }
+
+  .update-cart {
+    display: none!important;
+  }
+
+  // No transform fallback
+  &.no-transforms {
+    border: 1px solid $colorBorder;
+  }
+
+}
+
+.ajaxcart__overlay {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  visibility: hidden;
+  top: 0;
+  left: 0;
+  z-index: 99999998;
+  opacity: 0;
+  cursor: pointer;
+  @include transition(all 450ms cubic-bezier(0.57,.06,.05,.95));
+  @if (lightness( $colorBody ) > 40) {
+    background-color: #d3d3d3;
+  }
+  @else {
+    background-color: #333333;
+  }
+}
+
+@include at-query ($min, $postSmall) {
+  .is-visible ~ .ajaxcart__overlay {
+    visibility: visible;
+    @include transition(all 650ms cubic-bezier(0.57, 0.06, 0.05, 0.95));
+    @if (lightness( $colorBody ) > 40) {
+      opacity: 0.8;
+    }
+    @else {
+      opacity: 0.95;
+    }
+
+    .lt-ie9 & {
+      -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
+    }
+  }
+}
+
+// Modal content transition
+.ajaxcart--modal .ajaxcart__content {
+  @include transform(scale(0.9));
+  opacity: 0;
+}
+
+.ajaxcart--modal.is-visible .ajaxcart__content {
+  @include transform(scale(1));
+  opacity: 1;
+}
+
+// Quantity selector colors in the modal
+.ajaxcart--modal {
+
+  // Small screen quantity appearance
+  @include at-query ($max, $medium) {
+    input[type="text"] {
+      border-color: $colorBorder;
+    }
+
+    .ajaxcart__qty-adjust {
+      opacity: 1;
+    }
+  }
+}
+/*============================================================================
+  Ajaxify Drawer
+==============================================================================*/
+.ajaxcart--drawer {
+  height: 0px;
+  overflow: hidden;
+  border-bottom: 0px solid transparent;
+  @include perspective (1000px);
+  @include transform-style(preserve-3d);
+  @include transition(all 600ms cubic-bezier(0.47, 0.5, 0, 0.95));
+
+  &.is-visible {
+    @include transition(all 550ms cubic-bezier(0.47, 0, 0, 0.95));
+    border-bottom: 1px solid $colorBorder;
+  }
+
+  .update-cart {
+    display: none!important;
+  }
+
+  .ajaxcart__content {
+    margin: 0 auto;
+    opacity: 0;
+    overflow: hidden;
+    padding-top: $gutter;
+    padding-bottom: $gutter;
+    @include transform-origin(top);
+    @include transform('rotateX(-90deg)');
+  }
+
+  &.is-visible .ajaxcart__content {
+    opacity: 1;
+    @include transform('rotateX(0deg)');
+  }
+}
+
+.ajaxcart__caret {
+  position: relative;
+  display: block;
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+
+  .is-visible + & {
+    opacity: 1;
+    overflow: visible;
+  }
+
+  & > span {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    display: block;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid $colorBody;
+    margin-left: -6px;
+    opacity: 0;
+    @include transform(translate(0,-12px));
+    @include transition(all 0.25s ease-in-out 0.2s);
+  }
+
+  .is-visible + & > span {
+    @include transform(translate(0,0));
+    opacity: 1;
+  }
+}
+/*============================================================================
+  Sprites
+//   - using data URIs to prevent any additional http requests
+==============================================================================*/
+.sprite {
+  display: block;
+  text-indent: -9999px;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}
+
+.ajaxcart__close {
+  @extend .sprite;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  opacity: 0;
+  visibility: hidden;
+  border: 0 none;
+  width: 30px;
+  height: 25px;
+  cursor: pointer;
+  background: {
+    color: transparent;
+    position: center center;
+    image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAALCAYAAACprHcmAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyNpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChNYWNpbnRvc2gpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOkMzRUY2REVBNDY1QjExRTM4ODdCODU0OEQ4MDA1MjgwIiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOkMzRUY2REVCNDY1QjExRTM4ODdCODU0OEQ4MDA1MjgwIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6QzNFRjZERTg0NjVCMTFFMzg4N0I4NTQ4RDgwMDUyODAiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6QzNFRjZERTk0NjVCMTFFMzg4N0I4NTQ4RDgwMDUyODAiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz7sdZ8fAAAAp0lEQVR42nSPQQ6CMBBFx4ZEj+DSY8BGt9SVwRP1QBDdULeygaN4BFzpn+Q3mZCW5DFk/uvQ2YUQfiIygYuUnzc4O7wW/QCxIEbmi8oNG23mgO03js0reDF4gCNry77mUpkpHvSgo7QHA7gnwW1+q8FKcbViTtbJB/Bl7Uty5BWe4MTa2aWTPJplbuDDmpYe04IzqBn4zbU8J2udHcUpI9oDmtd/AQYAX20mtnhTCxQAAAAASUVORK5CYII=)
+  }
+  z-index: 999999999;
+  @include transition(all 450ms cubic-bezier(0.57,.06,.05,.95));
+
+  .is-visible & {
+    opacity: 0.8;
+    visibility: visible;
+    @include transition(opacity 650ms cubic-bezier(0.57, 0.06, 0.05, 0.95) 200ms);
+  }
+
+  &:hover {
+    opacity: 1;
+  }
+}
+/*============================================================================
+  #Keyframe Animations
+==============================================================================*/
+@-webkit-keyframes slideup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(2000px) rotate(10deg)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-30px)
+  }
+
+  80% {
+    -webkit-transform: translateY(10px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0) rotate(0deg)
+  }
+}
+
+@-ms-keyframes slideup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(2000px) rotate(10deg)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-30px)
+  }
+
+  80% {
+    -webkit-transform: translateY(10px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0) rotate(0deg)
+  }
+}
+
+@keyframes slideup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(2000px) rotate(10deg)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-30px)
+  }
+
+  80% {
+    -webkit-transform: translateY(10px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0) rotate(0deg)
+  }
+}
+
+@-webkit-keyframes popup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(30px)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-10px)
+  }
+
+  80% {
+    -webkit-transform: translateY(2px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0)
+  }
+}
+
+@-ms-keyframes popup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(30px)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-10px)
+  }
+
+  80% {
+    -webkit-transform: translateY(2px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0)
+  }
+}
+
+@keyframes popup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(30px)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-10px)
+  }
+
+  80% {
+    -webkit-transform: translateY(2px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0)
+  }
+}
+
+@-webkit-keyframes container-slide {
+  0% {
+    opacity: 0;
+    -webkit-transform: rotate(0deg)
+  }
+
+  100% {
+    -webkit-transform: rotate(0deg)
+  }
+}
+
+@-ms-keyframes container-slide {
+  0% {
+    opacity: 0;
+    -webkit-transform: rotate(0deg)
+  }
+
+  100% {
+    -webkit-transform: rotate(0deg)
+  }
+}
+
+@keyframes container-slide {
+  0% {
+    opacity: 0;
+    -webkit-transform: rotate(0deg)
+  }
+
+  100% {
+    -webkit-transform: rotate(0deg)
+  }
+}
+
+@-webkit-keyframes fadein {
+  0% {
+    opacity: 0
+  }
+
+  100% {
+    opacity: 100
+  }
+}
+
+@-ms-keyframes fadein {
+  0% {
+    opacity: 0
+  }
+
+  100% {
+    opacity: 100
+  }
+}
+
+@keyframes fadein {
+  0% {
+    opacity: 0
+  }
+
+  100% {
+    opacity: 100
+  }
+}
+/*============================================================================
+  #Base Styles
+==============================================================================*/
+.template-giftcard,
+.template-giftcard body {
+  background: $colorBody;
+
+  a {
+    text-decoration: none;
+  }
+}
+
+.template-giftcard .wrapper {
+  max-width: 588px;
+
+  img, object, iframe {
+    max-width: 100%;
+  }
+}
+
+.giftcard-header {
+  padding: ($gutter * 2) 0;
+  font-size: 1em;
+  text-align: center;
+  -webkit-animation: fadein 0.5s ease-in-out both 0.4s;
+  animation: fadein 0.5s ease-in-out both 0.4s;
+}
+
+.shop-url {
+  display: none;
+}
+
+.giftcard {
+  -webkit-animation: slideup 0.8s ease-in-out;
+  animation: slideup 0.8s ease-in-out
+}
+
+.giftcard__border {
+  background-color: $colorGiftBorder;
+  border-radius: 4px;
+  border: 1px solid darken($colorGiftBorder, 5%);
+  padding: 1em;
+  -webkit-animation: container-slide 0.8s ease-in-out;
+  animation: container-slide 0.8s ease-in-out
+}
+
+.giftcard__content {
+  @include clearfix;
+  background-color: #fff;
+  color: $colorGiftText;
+  border: 1px solid darken($colorGiftBorder, 5%);
+  border-radius: 3px;
+  -webkit-animation: cardslide 0.8s ease-in-out;
+  animation: cardslide 0.8s ease-in-out;
+}
+
+.giftcard__header {
+  @include clearfix;
+  border-bottom: 1px solid $colorBorder;
+  padding: $gutter / 2;
+}
+
+.giftcard__title {
+  float: left;
+  margin-bottom: 0;
+}
+
+.giftcard__tag {
+  display: block;
+  float: right;
+  background-color: lighten($colorGiftText, 10%);
+  border: 1px solid transparent;
+  color: #fff;
+  padding: $gutter / 3;
+  border-radius: 4px;
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  line-height: 1;
+}
+
+.giftcard__tag--active {
+  background: transparent;
+  color: $colorGiftText;
+  border: 1px solid lighten($colorGiftText, 20%);
+}
+
+.giftcard__wrap {
+  position: relative;
+  margin: ($gutter / 2) ($gutter / 2) $gutter;
+
+  img {
+    position: relative;
+    display: block;
+    border-radius: 10px;
+    z-index: 2;
+  }
+
+  &:before,
+  &:after {
+    content: "";
+    position: absolute;
+    width: 47px;
+    height: 47px;
+    z-index: 3;
+  }
+
+  &:before {
+    background: url('//cdn.shopify.com/s/assets/gift-card/corner-top-left-2ba3edcd9e97ba146cd01a8161365c5e.svg') 0 0 no-repeat;
+    top: -1px;
+    left: -1px;
+  }
+
+  &:after {
+    background: url('//cdn.shopify.com/s/assets/gift-card/corner-bottom-right-1fb9bf49ff9564325e6b7c0fb0a7ff45.svg') 0 0 no-repeat;
+    bottom: -1px;
+    right: -1px;
+  }
+
+  .lt-ie9 &:before,
+  .lt-ie9 &:after {
+    display: none;
+  }
+}
+
+.giftcard__code {
+  position: absolute;
+  bottom: $gutter;
+  text-align: center;
+  width: 100%;
+  z-index: 50;
+}
+
+.giftcard__code--medium {
+  font-size: .875em;
+}
+
+.giftcard__code--small {
+  font-size: .75em;
+}
+
+.giftcard__code__inner {
+  display: inline-block;
+  vertical-align: baseline;
+  background-color: #fff;
+  padding: .5em;
+  border-radius: 4px;
+  max-width: 450px;
+  -webkit-box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+
+  .giftcard__code--small & {
+    overflow: auto;
+  }
+}
+
+.giftcard__code__text {
+  font-weight: 400;
+  font-size: 1.875em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  border: 1px dashed $colorBorder;
+  padding: .4em .5em;
+  display: inline-block;
+  vertical-align: baseline;
+  color: #777;
+  line-height: 1;
+
+  .disabled & {
+    color: #999;
+    text-decoration: line-through;
+  }
+}
+
+.giftcard__amount {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: #fff;
+  font-size: 2.75em;
+  line-height: 1.2;
+  padding: $gutter / 2;
+  z-index: 50;
+
+  strong {
+    display: block;
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+  }
+}
+
+.giftcard__amount--medium {
+  font-size: 2em;
+}
+
+.tooltip {
+  display: block;
+  position: absolute;
+  top: -50%;
+  right: 50%;
+  margin-top: 16px;
+  z-index: 3;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  -webkit-animation: popup 0.5s ease-in-out both 0.7s;
+  animation: popup 0.5s ease-in-out both 0.7s;
+
+  &:before {
+    content: "";
+    display: block;
+    position: absolute;
+    left: 100%;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    margin-left: -5px;
+    margin-bottom: -5px;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 5px solid #333;
+    border-top: 5px solid rgba(51,51,51,0.9);
+  }
+}
+
+.tooltip__label {
+  display: block;
+  position: relative;
+  right: -50%;
+  border: none;
+  border-radius: 4px;
+  background: #333;
+  background: rgba(51,51,51,0.9);
+  min-height: 14px;
+  font-weight: 400;
+  font-size: 12px;
+  text-decoration: none;
+  line-height: 16px;
+  text-shadow: none;
+  padding: .5em .75em;
+  margin-left: .25em;
+
+  small {
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: #b3b3b3;
+    font-size: .875em;
+  }
+}
+
+.giftcard__instructions {
+  text-align: center;
+  margin: 0 ($gutter / 2) $gutter;
+}
+
+.giftcard__actions {
+  position: relative;
+  border-top: 1px solid $colorBorder;
+  padding: $gutter ($gutter / 2);
+  text-align: center;
+  overflow: hidden;
+}
+
+.action-link {
+  position: absolute;
+  left: $gutter / 2;
+  top: 50%;
+  font-size: 0.875em;
+  font-weight: bold;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: .2em;
+  color: lighten($colorGiftText, 10%);
+  margin-top: -10px;
+
+  &:hover,
+  &:focus {
+    color: $colorGiftText;
+  }
+}
+
+.action-link__print {
+  display: inline-block;
+  vertical-align: baseline;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  margin-right: 5px;
+  opacity: 0.25;
+  background: {
+    image: url('//cdn.shopify.com/s/assets/gift-card/icon-print-164daa1ae32d10d1f9b83ac21b6f2c70.png');
+    repeat: no-repeat;
+    position: 0 0;
+  }
+
+  .svg & {
+    background-image: url('//cdn.shopify.com/s/assets/gift-card/icon-print-6a10b2fb86d223b8c783c9696eaf4c31.svg');
+  }
+
+  .action-link:hover & {
+    opacity: 0.4;
+  }
+}
+
+.giftcard__footer {
+  text-align: center;
+  padding: ($gutter * 2) 0;
+  -webkit-animation: fadein 0.5s ease-in-out both 0.4s;
+  animation: fadein 0.5s ease-in-out both 0.4s
+}
+
+.giftcard__icon {
+  display: inline-block;
+  vertical-align: baseline;
+}
+
+#qr-code {
+  display: none;
+
+  img {
+    padding: $gutter;
+    border: 1px solid $colorBorder;
+    border-radius: 4px;
+    margin: 0 auto $gutter;
+  }
+}
+/*============================================================================
+  #Media Queries
+==============================================================================*/
+
+/*================ Medium-down width ================*/
+@media screen and (max-width: 580px) {
+  .giftcard {
+    font-size: 12px;
+  }
+
+  .giftcard-header {
+    padding: $gutter 0;
+  }
+
+  .header-logo {
+    font-size: 2em;
+  }
+
+  .giftcard__border {
+    padding: $gutter / 2;
+  }
+
+  .giftcard__actions {
+    padding: $gutter / 2;
+  }
+
+  .giftcard__actions .btn {
+    width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .action-link {
+    display: none;
+  }
+}
+
+/*================ Small width ================*/
+@media screen and (max-width: 400px) {
+  .giftcard__amount strong {
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+  }
+
+  .giftcard__wrap:before,
+  .giftcard__wrap:after {
+    display: none;
+  }
+
+  .giftcard__code {
+    font-size: .75em;
+  }
+
+  .giftcard__code--medium {
+    font-size: .65em;
+  }
+
+  .giftcard__code--small {
+    font-size: .55em;
+  }
+}
+
+
+/*================ Small height ================*/
+@media screen and (max-height: 800px) {
+  .header-logo img {
+    max-height: 90px;
+  }
+}
+/*============================================================================
+  #Sass Mixins
+    - Copied from timber.scss.liquid
+==============================================================================*/
+.clearfix {
+  &:after {
+    content: "";
+    display: table;
+    clear: both; }
+  *zoom: 1;
+}
+
+@mixin clearfix() {
+  &:after {
+    content: "";
+    display: table;
+    clear: both; }
+  *zoom: 1;
+}
+
+@mixin prefix($property, $value) {
+  -webkit-#{$property}: #{$value};
+  -moz-#{$property}: #{$value};
+  -ms-#{$property}: #{$value};
+  -o-#{$property}: #{$value};
+  #{$property}: #{$value};
+}
+
+/*============================================================================
+  #Print Styles
+==============================================================================*/
+@media print {
+  @page {
+    margin: 0.5cm;
+  }
+
+  p, h2, h3 {
+    orphans: 3;
+    widows: 3;
+  }
+
+  h2, h3 {
+    page-break-after: avoid;
+  }
+
+  html, body {
+    -webkit-text-size-adjust: 100%;
+    -webkit-print-color-adjust: exact;
+    background-color: #fff;
+  }
+
+  .giftcard-header {
+    padding: 10px 0;
+  }
+
+  .giftcard__content,
+  .giftcard__border {
+    border: 0 none;
+    padding: 0;
+    background-color: #fff;
+  }
+
+  .giftcard__actions,
+  .giftcard__wrap:before,
+  .giftcard__wrap:after,
+  .tooltip {
+    display: none;
+  }
+
+  .giftcard__title {
+    float: none;
+    text-align: center;
+  }
+
+  .giftcard__code__text {
+    color: #555;
+  }
+
+  .shop-url {
+    display: block;
+  }
+
+  .logo {
+    color: #58686F;
+  }
+
+  #qr-code {
+    display: block;
+  }
+}
+/*============================================================================
+  #General Variables
+==============================================================================*/
+// Timber Colors
+$colorBody: {{ settings.color_body_bg }};
+$colorBorder: {{ settings.color_borders }};
+
+// Gift Card Colors
+$colorGiftText: #999; // note, this is always on a white background
+$colorGiftBorder: {{ settings.color_primary }};
+
+// Sizes
+$gutter: 30px;
+/*================ Theme-specific partials ================*/
+h1 {
+  font-size: em(28px);
+}
+
+h2 {
+  font-size: em(26px);
+}
+
+h3 {
+  font-size: em(18px);
+}
+
+h4,
+.breadcrumb,
+.tags {
+  font-size: em(15px);
+  line-height: 1.4;
+}
+
+h4 {
+  text-transform: uppercase;
+}
+
+h5,
+h6 {
+  font-size: em(14px);
+}
+
+.h1 { @extend h1; }
+.h2 { @extend h2; }
+.h3 { @extend h3; }
+.h4 { @extend h4; }
+.h5 { @extend h5; }
+.h6 { @extend h6; }
+/*================ Footer ================*/
+.site-footer {
+  p,
+  li,
+  .rte,
+  input {
+    font-size: 0.85em;
+  }
+}
+
+@if $colorBody == $colorHeader {
+  .main-content {
+    margin-top: 0;
+  }
+}
+
+@if $colorBody == $colorFooterBg {
+  .main-content {
+    padding-bottom: 0;
+  }
+}
+/*================ Module | Grid Link ================*/
+.grid-link__container {
+  margin-bottom: -$gutter;
+}
+
+.grid-link,
+.grid-link--focus {
+  position: relative;
+  display: block;
+  padding-bottom: $gutter;
+  line-height: 1.3;
+
+  &:hover,
+  &:active {
+    .grid-link__image {
+      opacity: 0.8;
+    }
+  }
+}
+
+.grid-link--focus {
+  padding: $gutter / 1.5;
+  box-shadow: 0px 1px 1px rgba(0,0,0,0.1);
+  margin-bottom: $gutter;
+
+  &:before {
+    display: block;
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: $colorFooterBg;
+    @include transition(all 0.08s ease-in);
+  }
+
+  &:hover,
+  &:active {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+}
+
+.grid-link__image {
+  position: relative;
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+  margin: 0 auto 6px;
+  @include transition(all 0.08s ease-in);
+
+  img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+
+    .sold-out & {
+      opacity: 0.4;
+      filter: alpha(opacity=40);
+    }
+  }
+
+  .list-view__product & {
+    min-width: 130px;
+  }
+}
+
+.grid-link__image-centered {
+  display: table-cell;
+  vertical-align: middle;
+  width: 100%;
+  overflow: hidden;
+}
+
+.grid-link__title,
+.grid-link__meta {
+  position: relative;
+  margin-bottom: 5px;
+}
+
+.grid-link__meta {
+  color: $colorTextBody;
+  line-height: 1.4;
+}
+
+.grid-link__sale_price {
+  opacity: 0.7;
+  filter: alpha(opacity=70);
+}
+
+.list-view__product {
+  border-bottom: 1px solid $colorBorder;
+  margin-bottom: $gutter / 3;
+  padding-bottom: $gutter / 3;
+}
+
+$badgeSize: 55px;
+.badge {
+  display: table;
+  position: absolute;
+  width: $badgeSize;
+  height: $badgeSize;
+  background-color: $colorPrimary;
+  color: $colorBtnPrimaryText;
+  border-radius: 50%;
+  text-transform: uppercase;
+  font-weight: bold;
+  text-align: center;
+  font-size: em(10px);
+  line-height: 1.1;
+  z-index: 10;
+}
+
+.badge--sold-out {
+  top: 50%;
+  left: 50%;
+  margin-top: -($badgeSize / 2);
+  margin-left: -($badgeSize / 2);
+}
+
+.badge--sale {
+  top: -($badgeSize / 3);
+  left: -($badgeSize / 3);
+}
+
+.badge__text {
+  display: table-cell;
+  vertical-align: middle;
+  padding: 2px 8px 0;
+}
+
+.badge__text--small {
+  font-size: 8px;
+  padding-top: 0;
+}
+/*================ Module-specific styles ================*/
+.sidebar-module {
+  margin-bottom: $gutter;
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+}
+
+.sidebar-module__list {
+  margin-bottom: 0;
+
+  a {
+    color: $colorTextBody;
+
+    &:active,
+    &:focus,
+    &:hover,
+    &.is-active,
+    &.is-open {
+      color: $colorLink;
+    }
+  }
+}
+
+.sidebar-module__hidden-item {
+  display: none;
+}
+
+.sidebar-module__collapse {
+  display: none;
+}
+
+.sidebar-module__list--expand {
+  .sidebar-module__hidden-item {
+    display: block;
+  }
+
+  + .sidebar-module__viewmore .sidebar-module__expand {
+    display: none;
+  }
+
+  + .sidebar-module__viewmore .sidebar-module__collapse {
+    display: inline-block;
+  }
+}
+
+.sidebar-sublist__trigger-wrap {
+  position: relative;
+  padding-right: 20px;
+}
+
+.sidebar-sublist a {
+  display: block;
+}
+
+.sidebar-sublist__expand,
+.sidebar-sublist__contract {
+  background: none;
+  border: 0 none;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  display: block;
+  height: 20px;
+  width: 20px;
+  margin-top: -10px;
+  color: $colorPrimary;
+  font-size: 0.5em;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.sidebar-sublist__contract {
+  display: none;
+}
+
+.sidebar-sublist.is-open {
+  .sidebar-sublist__contract {
+    display: block;
+  }
+
+  .sidebar-sublist__expand {
+    display: none;
+  }
+}
+
+.sidebar-sublist__content {
+  display: none;
+  margin: 10px 0 10px 10px;
+  padding-left: 10px;
+  border-left: 3px solid $colorBorder;
+  font-size: em(14px);
+
+  .sidebar-sublist.is-open & {
+    display: block;
+  }
+}
+
+.sidebar-module__article {
+  line-height: 1.4;
+  margin-bottom: 10px;
+
+  & + & {
+    border-top: 1px solid $colorBorder;
+    padding-top: 10px;
+  }
+}
+
+.header-bar {
+  @include clearfix();
+  font-size: em(14px);
+  background-color: $colorTopBar;
+  color: $colorTopBarText;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  text-align: center;
+
+  @include at-query($min, $large) {
+    text-align: right;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  a,
+  button {
+    color: $colorTopBarText;
+
+    &:hover,
+    &:active,
+    &:focus {
+      outline-color: $colorTopBarText;
+    }
+  }
+}
+
+@include at-query($min, $large) {
+  .header-bar__left {
+    text-align: left;
+    width: 33.33%;
+  }
+
+  .header-bar__right {
+    width: 66.66%;
+  }
+}
+
+.header-bar__module {
+  margin-bottom: $gutter/2;
+
+  .header-bar__right &:last-child {
+    margin-bottom: 0;
+  }
+
+  @include at-query($min, $large) {
+    display: inline-block;
+    vertical-align: middle;
+    text-align: left;
+    margin-bottom: 0;
+  }
+}
+
+.header-bar__module--list {
+  list-style: none;
+  margin: 0;
+
+  li {
+    display: inline-block;
+    margin: 0;
+
+    & + li {
+      margin-left: 6px;
+    }
+  }
+}
+
+.cart-toggle {
+  display: inline-block;
+}
+
+.header-bar__cart-icon {
+  font-size: 1.2em;
+  margin-right: 4px;
+}
+
+.header-bar__cart-count {
+  display: inline-block;
+  border-radius: $radius;
+  background-color: $colorTopBarText;
+  color: $colorPrimary;
+  line-height: 1;
+  font-size: 1.1em;
+  padding: 5px 10px;
+  margin-left: 4px;
+}
+
+.hidden-count {
+  display: none;
+}
+
+.header-bar__sep {
+  display: none;
+
+  @include at-query($min, $large) {
+    color: $colorTopBarText;
+    opacity: 0.4;
+    display: inline-block;
+    padding: 0 10px;
+  }
+}
+
+.header-bar__search {
+  @include clearfix();
+  position: relative;
+  background-color: #fff;
+  border: 0 none;
+  border-radius: $radius;
+  min-width: 100px;
+
+  @include at-query($min, $large) {
+    max-width: 160px;
+    margin-left: 20px;
+  }
+
+  form,
+  input,
+  button {
+    margin-bottom: 0;
+  }
+}
+
+.header-bar__search-input[type="search"] {
+  display: block;
+  width: 60%;
+  float: right;
+  background: transparent;
+  border-color: transparent;
+  padding: 5px 0;
+
+  &:focus {
+    background: transparent;
+    border-color: transparent;
+  }
+}
+
+.header-bar__search-submit {
+  display: block;
+  float: left;
+  width: 40%;
+  font-size: 16px;
+  padding: 4px 0;
+}
+
+.supports-fontface {
+  .header-bar__search-submit {
+    width: 20%;
+  }
+
+  .header-bar__search-input[type="search"] {
+    width: 80%;
+  }
+
+  @include at-query($max, $medium) {
+    .header-bar__search-submit {
+      width: 10%;
+      float: left;
+    }
+
+    .header-bar__search-input[type="search"] {
+      width: 90%;
+      float: right;
+    }
+  }
+}
+
+
+.header-bar__search {
+  .btn,
+  .btn:hover,
+  .btn:focus {
+    background: transparent;
+    color: $colorPrimary;
+  }
+}
+*============================================================================
+  #Product Reviews - Free Shopify App
+    - https://apps.shopify.com/product-reviews
+==============================================================================*/
+.shopify-product-reviews {
+  margin: 0;
+
+  .spr-header-title {
+    @extend h1;
+    display: none;
+  }
+
+  .spr-container {
+    padding: 0!important; // important needed to override in-page CSS from plugin
+    border: 0 none;
+  }
+
+  /*================ Summary Rating ================*/
+  .spr-summary {
+    border-bottom: 1px solid $colorBorder;
+    padding-bottom: $gutter / 2;
+    margin-bottom: $gutter;
+
+    @include at-query ($min, $large) {
+      float: left;
+      border: 1px solid $colorBorder;
+      width: 20%;
+      padding: $gutter / 3;
+
+      .spr-summary-starrating {
+        display: block;
+        margin: 0;
+      }
+    }
+  }
+
+  .spr-summary-caption {
+    font-size: 14px;
+
+    @include at-query ($min, $large) {
+      display: block;
+      border-bottom: 1px solid $colorBorder;
+      margin-bottom: $gutter / 3;
+      padding-bottom: $gutter / 3;
+    }
+  }
+
+  .spr-summary-actions-newreview {
+    &:after {
+      content: ' \203A';
+      clear: none;
+      display: inline;
+    }
+
+    @include at-query ($min, $large) {
+      float: none;
+    }
+  }
+
+  .spr-header:after {
+    clear: none;
+  }
+
+  /*================ Content ================*/
+  .spr-content {
+    @include at-query ($min, $large) {
+      float: left;
+      width: 80%;
+      padding-left: $gutter;
+    }
+  }
+
+  .spr-reviews {
+    margin: 0;
+  }
+
+  .spr-review {
+    padding: 0;
+    margin: 0;
+    border: 0 none;
+
+    & + .spr-review {
+      margin-top: $gutter / 2;
+    }
+  }
+
+  .spr-review-content-body {
+    font-size: inherit;
+
+    br {
+      content: '';
+      display: block;
+      overflow: hidden;
+      height: 1px;
+    }
+  }
+
+  /*================ Individual Ratings ================*/
+  .spr-review-header {
+    @include clearfix;
+    margin-bottom: 0;
+  }
+
+  .spr-review-header-title {
+    margin-right: $gutter / 2;
+    font-family: $bodyFontStack;
+    font-weight: 400;
+    text-transform: uppercase;
+    font-size: 17px;
+    line-height: 20px; // may need adjusting if font sizes change
+    position: relative;
+    top: 2px;
+  }
+
+  @include at-query ($min, $large) {
+    .spr-review-header-starratings,
+    .spr-review-header-title {
+      display: inline;
+    }
+
+    .spr-review-header-title {
+      float: left;
+    }
+  }
+
+  .spr-review-header-starratings {
+    position: relative;
+    top: -2px;
+    margin: 0 ($gutter / 2) ($gutter / 3) 0;
+  }
+
+  .spr-review-header-byline {
+    position: relative;
+    top: -2px;
+    display: inline-block;
+    margin: 0;
+  }
+
+  .spr-review-reportreview {
+    display: none;
+  }
+
+  /*================ Review Form ================*/
+  .spr-form {
+    border: 0 none;
+    border-bottom: 1px solid $colorBorder;
+    margin: 0 0 $gutter;
+    padding: 0 0 $gutter;
+  }
+}
+
+/*================ Star Icons ================*/
+.spr-badge-starrating,
+.spr-icon {
+  color: $colorReviewStars;
+  font-size: 0.7em;
+}
+
+/*================ Review count ================*/
+.spr-badge-caption {
+  display: inline-block;
+  font-size: 13px;
+}
+
+/*================ Hide review badge if no reviews ================*/
+.grid-link {
+  .spr-badge[data-rating="0.0"] {
+    display: none;
+  }
+}
+
+.mobile-nav-trigger,
+.mobile-cart-toggle {
+  font-weight: bold;
+
+  .icon {
+    position: relative;
+    top: -1px;
+    vertical-align: middle;
+    padding-right: 4px;
+  }
+}
+
+.mobile-nav-trigger {
+  display: block;
+  float: left;
+  background: none;
+  border: 0 none;
+  padding: 0;
+  margin: 0;
+
+  .icon {
+    font-size: 1.4em;
+  }
+}
+
+.mobile-cart-toggle {
+  display: block;
+  float: right;
+
+  .header-bar__cart-icon {
+    font-size: 1.4em;
+  }
+
+  .cart-count {
+    &:before {
+      display: inline;
+      content: "(";
+    }
+    &:after {
+      display: inline;
+      content: ")";
+    }
+  }
+}
+
+.mobile-nav {
+  display: none;
+  list-style: none;
+  text-align: left;
+  margin: 0;
+
+  li {
+    margin: 0;
+  }
+}
+
+.mobile-nav__link {
+  display: block;
+  border-top: 1px solid $colorTopBarText;
+  border-color: rgba($colorTopBarText, 0.2);
+
+  /*================ Can't always control anchor markup to add a class ================*/
+  > a {
+    display: block;
+    padding: ($gutter / 2.5) ($gutter / 2);
+    font-size: em(15px);
+    font-family: $headerFontStack;
+    font-weight: $headerFontWeight;
+    text-transform: uppercase;
+
+    @include at-query ($min, $small) {
+      padding-left: $gutter;
+      padding-right: $gutter;
+    }
+  }
+}
+
+.mobile-nav__sublist-expand,
+.mobile-nav__sublist-contract {
+  display: inline-block;
+  font-size: 0.6em;
+  vertical-align: middle;
+  margin: -2px 0 0 4px;
+}
+
+.mobile-nav__sublist-contract {
+  display: none;
+}
+
+.mobile-nav__sublist-trigger.is-active {
+  .mobile-nav__sublist-contract {
+    display: inline-block;
+  }
+
+  .mobile-nav__sublist-expand {
+    display: none;
+  }
+}
+
+.mobile-nav__sublist {
+  list-style: none;
+  margin: 0;
+  display: none;
+  background-color: $colorHeader;
+
+  .mobile-nav__sublist {
+    margin-left: $gutter / 2;
+
+    .mobile-nav__sublist-link a {
+      border-top: none;
+    }
+  }
+}
+
+.mobile-nav__sublist-link {
+  a {
+    display: block;
+    padding: ($gutter / 2.5) ($gutter / 2);
+    color: $colorNavText;
+    font-size: em(15px);
+    font-family: $headerFontStack;
+    border-top: 1px solid $colorBorder;
+
+    @include at-query ($min, $small) {
+      padding-left: $gutter;
+      padding-right: $gutter;
+    }
+
+    &:hover {
+      opacity: 1;
+      color: $colorPrimary;
+    }
+  }
+}
+
+/*================ Module-specific styles ================*/
+.sidebar-module {
+  margin-bottom: $gutter;
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+}
+
+.sidebar-module__list {
+  margin-bottom: 0;
+
+  a {
+    color: $colorTextBody;
+
+    &:active,
+    &:focus,
+    &:hover,
+    &.is-active,
+    &.is-open {
+      color: $colorLink;
+    }
+  }
+}
+
+.sidebar-module__hidden-item {
+  display: none;
+}
+
+.sidebar-module__collapse {
+  display: none;
+}
+
+.sidebar-module__list--expand {
+  .sidebar-module__hidden-item {
+    display: block;
+  }
+
+  + .sidebar-module__viewmore .sidebar-module__expand {
+    display: none;
+  }
+
+  + .sidebar-module__viewmore .sidebar-module__collapse {
+    display: inline-block;
+  }
+}
+
+.sidebar-sublist__trigger-wrap {
+  position: relative;
+  padding-right: 20px;
+}
+
+.sidebar-sublist a {
+  display: block;
+}
+
+.sidebar-sublist__expand,
+.sidebar-sublist__contract {
+  background: none;
+  border: 0 none;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  display: block;
+  height: 20px;
+  width: 20px;
+  margin-top: -10px;
+  color: $colorPrimary;
+  font-size: 0.5em;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.sidebar-sublist__contract {
+  display: none;
+}
+
+.sidebar-sublist.is-open {
+  .sidebar-sublist__contract {
+    display: block;
+  }
+
+  .sidebar-sublist__expand {
+    display: none;
+  }
+}
+
+.sidebar-sublist__content {
+  display: none;
+  margin: 10px 0 10px 10px;
+  padding-left: 10px;
+  border-left: 3px solid $colorBorder;
+  font-size: em(14px);
+
+  .sidebar-sublist.is-open & {
+    display: block;
+  }
+}
+
+.sidebar-module__article {
+  line-height: 1.4;
+  margin-bottom: 10px;
+
+  & + & {
+    border-top: 1px solid $colorBorder;
+    padding-top: 10px;
+  }
+}
+{% if settings.slider_home_enable %}
+/*============================================================================
+  #FlexSlider
+    - jQuery FlexSlider v2.2.0 | http://www.woothemes.com/flexslider/
+    - Contributing author: Tyler Smith (@mbmufffin)
+==============================================================================*/
+.flexslider {
+  margin: 0;
+  padding: 0;
+}
+
+.flexslider li {
+  margin: 0;
+  max-width: 100%;
+}
+
+.flexslider .slides > li {
+  display: none; /* Hide the slides before the JS is loaded. Avoids image jumping */
+  margin: 0;
+  position: relative;
+  @include backface();
+}
+
+.flexslider .slides img {
+  max-width: 100%;
+  margin: 0 auto;
+  display: block;
+}
+
+.slides { @include clearfix; }
+html[xmlns] .slides { display: block; }
+* html .slides { height: 1%; }
+
+/*================ No JS Fallback ================*/
+.no-js .slides > li:first-child { display: block; }
+.flexslider { position: relative; zoom: 1; }
+.flex-viewport { max-height: 2000px; -webkit-transition: all 1s ease; -moz-transition: all 1s ease; -o-transition: all 1s ease; transition: all 1s ease; }
+.loading .flex-viewport { max-height: 300px; }
+.flexslider .slides { zoom: 1; }
+.carousel li { margin-right: 5px; }
+
+/*================ Direction Nav ================*/
+.flex-direction-nav {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flex-direction-nav { *height: 0; }
+.flex-direction-nav a  {
+  display: block;
+  width: 45px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 10;
+  overflow: hidden;
+  opacity: 0;
+  cursor: pointer;
+  @include transition(all 0.3s ease 0.4s);
+}
+
+.flex-direction-nav .flex-disabled {
+  opacity: 0!important;
+  filter: alpha(opacity=0);
+  cursor: default;
+}
+
+.flex-direction-nav a {
+  text-indent: -9999px;
+  background: {
+    color: transparent;
+    repeat: no-repeat;
+    size: 20px auto;
+  }
+
+  /*================ Hide SVG arrows in oldIE ================*/
+  .lte-ie9 & {
+    display: none;
+  }
+
+  &.flex-prev {
+    background-image: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAxNy4xLjAsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4NCjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+DQo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4Ig0KCSB3aWR0aD0iMjIuM3B4IiBoZWlnaHQ9IjQwcHgiIHZpZXdCb3g9IjAgMCAyMi4zIDQwIiBlbmFibGUtYmFja2dyb3VuZD0ibmV3IDAgMCAyMi4zIDQwIiB4bWw6c3BhY2U9InByZXNlcnZlIj4NCjxwYXRoIGZpbGw9IiNEM0QzRDMiIGQ9Ik0xOC43LDBMMCwxOS43TDE4LjcsNDBjMCwwLDUuMi0xLDMuMS0zLjFTNS43LDE5LjcsNS43LDE5LjdzMTQtMTQuNSwxNi4xLTE2LjZTMTguNywwLDE4LjcsMHoiLz4NCjwvc3ZnPg0K");
+    background-position: center center;
+  }
+
+  &.flex-next {
+    background-image: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAxNy4xLjAsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4NCjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+DQo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4Ig0KCSB3aWR0aD0iMjIuM3B4IiBoZWlnaHQ9IjQwcHgiIHZpZXdCb3g9IjAgMCAyMi4zIDQwIiBlbmFibGUtYmFja2dyb3VuZD0ibmV3IDAgMCAyMi4zIDQwIiB4bWw6c3BhY2U9InByZXNlcnZlIj4NCjxwYXRoIGZpbGw9IiNEM0QzRDMiIGQ9Ik0wLjUsMy4xYzIuMSwyLjEsMTYuMSwxNi42LDE2LjEsMTYuNlMyLjYsMzQuOCwwLjUsMzYuOVMzLjYsNDAsMy42LDQwbDE4LjctMjAuM0wzLjYsMEMzLjYsMC0xLjYsMSwwLjUsMy4xDQoJeiIvPg0KPC9zdmc+DQo=");
+    background-position: center center;
+  }
+}
+
+/*================ Control Nav ================*/
+.flex-control-nav {
+  position: absolute;
+  bottom: $gutter/2;
+  width: 100%;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    margin: 0 4px;
+    display: inline-block;
+    zoom: 1;
+    *display: inline;
+    vertical-align: middle;
+  }
+}
+
+.flex-control-paging li a {
+  width: 12px;
+  height: 12px;
+  display: block;
+  background-color: #ededed;
+  cursor: pointer;
+  text-indent: -9999px;
+  border-radius: 20px;
+  border: 2px solid #fff;
+
+  &:hover {
+    background-color: #333;
+  }
+
+  &.flex-active {
+    background-color: #fff;
+    border-color: $colorPrimary;
+    cursor: default;
+  }
+}
+
+.flex-control-thumbs {margin: 5px 0 0; position: static; overflow: hidden;}
+.flex-control-thumbs li {width: 25%; float: left; margin: 0;}
+.flex-control-thumbs img {width: 100%; display: block; opacity: .7; cursor: pointer;}
+.flex-control-thumbs img:hover {opacity: 1;}
+.flex-control-thumbs .flex-active {opacity: 1; cursor: default;}
+
+.flexslider:hover {
+  .flex-next,
+  .flex-prev {
+    opacity: 1;
+    @include transition(all 0.3s ease);
+  }
+}
+
+.flex-direction-nav .flex-prev { left: 20px; }
+.flex-direction-nav .flex-next { right: 20px; }
+.flexslider:hover .flex-prev { left: 0; }
+.flexslider:hover .flex-next { right: 0; }
+
+/*================ Custom Flexslider Styles ================*/
+.flexslider .slides {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+.slide-link {
+  display: block;
+
+  img {
+    display: block;
+  }
+}
+
+{% endif %}
+{% if settings.social_sharing_products or settings.social_sharing_blog %}
+/*================ Social share buttons ================*/
+$shareButtonHeight: 22px;
+$shareButtonCleanHeight: 30px;
+$shareCountBg: #fff;
+$shareBorderColor: #ececec;
+
+.social-sharing {
+  font-family: "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  * {
+    -webkit-box-sizing:border-box;
+    -moz-box-sizing:border-box;
+    box-sizing:border-box;
+  }
+
+  a {
+    display: inline-block;
+    color: #fff;
+    border-radius: 2px;
+    margin: 5px 10px 5px 0;
+    height: $shareButtonHeight;
+    line-height: $shareButtonHeight;
+    text-decoration: none;
+    font-weight: normal;
+
+    &:hover {
+      color: #fff;
+    }
+  }
+
+  span {
+    display: inline-block;
+    vertical-align: top;
+    height: $shareButtonHeight;
+    line-height: $shareButtonHeight;
+    font-size: 12px;
+  }
+
+  .icon {
+    padding: 0 5px 0 10px;
+
+    &:before {
+      line-height: $shareButtonHeight;
+    }
+  }
+
+  /*================ Large Buttons ================*/
+  &.is-large a {
+    height: $shareButtonHeight*2;
+    line-height: $shareButtonHeight*2;
+
+    span {
+      height: $shareButtonHeight*2;
+      line-height: $shareButtonHeight*2;
+      font-size: 18px;
+    }
+
+    .icon {
+      padding: 0 10px 0 18px;
+
+      &:before {
+        line-height: $shareButtonHeight*2;
+      }
+    }
+  }
+}
+
+.share-title {
+  font-weight: 900;
+  font-size: 12px;
+  padding-right: 10px;
+
+  .is-large & {
+    padding-right: 16px;
+  }
+}
+
+.share-facebook {
+  background-color: #3b5998;
+
+  &:hover {
+    background-color: darken(#3b5998, 10%);
+  }
+}
+
+.share-twitter {
+  background-color: #00aced;
+
+  &:hover {
+    background-color: darken(#00aced, 10%);
+  }
+}
+
+.share-pinterest {
+  background-color: #cb2027;
+
+  &:hover {
+    background-color: darken(#cb2027, 10%);
+  }
+}
+
+.share-fancy {
+  background-color: #4999dc;
+
+  &:hover {
+    background-color: darken(#4999dc, 10%);
+  }
+}
+
+.share-google {
+  background-color: #dd4b39;
+
+  &:hover {
+    background-color: darken(#dd4b39, 10%);
+  }
+}
+
+.share-count {
+  position: relative;
+  background-color: $shareCountBg;
+  padding: 0 8px;
+  margin-right: -2px;
+  font-size: 14px;
+  line-height: $shareButtonHeight - 2;
+  color: #333;
+  border-radius: 0 2px 2px 0;
+  border: 1px solid $shareBorderColor;
+  opacity: 0;
+  @include transition(opacity 0.2s ease-in);
+
+  &.is-loaded {
+    opacity: 1;
+  }
+
+  &:before,
+  &:after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 50%;
+    margin-top: -6px;
+    width: 0;
+    height: 0;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-right: 6px solid;
+  }
+
+  &:before {
+    left: -6px;
+    border-right-color: $shareBorderColor;
+  }
+
+  &:after {
+    left: -5px;
+    border-right-color: $shareCountBg;
+  }
+
+  a:hover & {
+    background-color: darken($shareCountBg, 4%);
+
+    &:after {
+      border-right-color: darken($shareCountBg, 4%);
+    }
+  }
+
+  .is-large & {
+    font-size: 18px;
+    padding: 0 14px;
+  }
+
+}
+
+/*================ Clean Buttons ================*/
+.social-sharing.is-clean {
+  a {
+    background-color: #fff;
+    border: 1px solid $shareBorderColor;
+    color: #333;
+    height: $shareButtonCleanHeight;
+    line-height: $shareButtonCleanHeight;
+
+    span {
+      height: $shareButtonCleanHeight;
+      line-height: $shareButtonCleanHeight;
+      font-size: 13px;
+    }
+
+    &:hover {
+      background-color: $shareBorderColor;
+    }
+
+    &:hover .share-count {
+      background-color: $shareCountBg;
+
+      &:after {
+        border-right-color: $shareCountBg;
+      }
+    }
+
+    .share-title {
+      font-weight: normal;
+    }
+  }
+
+  .share-count {
+    top: -1px;
+  }
+
+  .icon-facebook {
+    color: #3b5998;
+  }
+
+  .icon-twitter {
+    color: #00aced;
+  }
+
+  .icon-pinterest {
+    color: #cb2027;
+  }
+
+  .icon-fancy {
+    color: #4999dc;
+  }
+
+  .icon-google {
+    color: #dd4b39;
+  }
+}
+
+{% endif %}

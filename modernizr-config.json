@@ -1,8 +1,0 @@
-{
-    "classPrefix": "",
-    "options": [
-        "setClasses",
-        "html5shiv"
-    ],
-    "feature-detects": []
-}

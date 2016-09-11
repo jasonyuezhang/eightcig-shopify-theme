@@ -1,0 +1,185 @@
+/*============================================================================
+  #Keyframe Animations
+==============================================================================*/
+@-webkit-keyframes slideup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(2000px) rotate(10deg)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-30px)
+  }
+
+  80% {
+    -webkit-transform: translateY(10px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0) rotate(0deg)
+  }
+}
+
+@-ms-keyframes slideup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(2000px) rotate(10deg)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-30px)
+  }
+
+  80% {
+    -webkit-transform: translateY(10px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0) rotate(0deg)
+  }
+}
+
+@keyframes slideup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(2000px) rotate(10deg)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-30px)
+  }
+
+  80% {
+    -webkit-transform: translateY(10px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0) rotate(0deg)
+  }
+}
+
+@-webkit-keyframes popup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(30px)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-10px)
+  }
+
+  80% {
+    -webkit-transform: translateY(2px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0)
+  }
+}
+
+@-ms-keyframes popup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(30px)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-10px)
+  }
+
+  80% {
+    -webkit-transform: translateY(2px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0)
+  }
+}
+
+@keyframes popup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(30px)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-10px)
+  }
+
+  80% {
+    -webkit-transform: translateY(2px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0)
+  }
+}
+
+@-webkit-keyframes container-slide {
+  0% {
+    opacity: 0;
+    -webkit-transform: rotate(0deg)
+  }
+
+  100% {
+    -webkit-transform: rotate(0deg)
+  }
+}
+
+@-ms-keyframes container-slide {
+  0% {
+    opacity: 0;
+    -webkit-transform: rotate(0deg)
+  }
+
+  100% {
+    -webkit-transform: rotate(0deg)
+  }
+}
+
+@keyframes container-slide {
+  0% {
+    opacity: 0;
+    -webkit-transform: rotate(0deg)
+  }
+
+  100% {
+    -webkit-transform: rotate(0deg)
+  }
+}
+
+@-webkit-keyframes fadein {
+  0% {
+    opacity: 0
+  }
+
+  100% {
+    opacity: 100
+  }
+}
+
+@-ms-keyframes fadein {
+  0% {
+    opacity: 0
+  }
+
+  100% {
+    opacity: 100
+  }
+}
+
+@keyframes fadein {
+  0% {
+    opacity: 0
+  }
+
+  100% {
+    opacity: 100
+  }
+}

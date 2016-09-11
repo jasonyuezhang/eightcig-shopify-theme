@@ -1,0 +1,20 @@
+/*================ Templates | Blog and Comments ================*/
+.comment {
+  margin-bottom: $gutter;
+
+  & + & {
+    border-top: 1px solid $colorBorder;
+    padding-top: $gutter;
+  }
+}
+
+.meta-sep {
+  position: relative;
+  top: -1px;
+  padding: 0 5px;
+  font-size: 0.7em;
+}
+
+.blog-date {
+  margin-top: -0.5em;
+}

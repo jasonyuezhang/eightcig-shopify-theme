@@ -1,14 +1,22 @@
 {
-    "root": [
-        "src/config.yml"
+  "root": [
+    "src/config.yml"
+  ],
+  "modernizrConfig": {
+    "classPrefix": "",
+    "options": [
+      "setClasses",
+      "html5shiv"
     ],
-    "scssIncludePaths": [
-        "node_modules/bourbon/app/assets/stylesheets",
-        "node_modules/bourbon-neat/app/assets/stylesheets",
-        "node_modules/bourbon-bitters/app/assets/stylesheets",
-        "node_modules/compass-sass-mixins/lib"
-    ],
-    "cssVendor": [
-        "node_modules/normalize.css/normalize.css"
-    ]
+    "feature-detects": []
+  },
+  "buildRoot": "./",
+  "srcRoot": "./src",
+  "cssRoot": "/scss",
+  "scriptRoot": "/scripts",
+  "cssExt": ["*.css", "*.scss", "*.scss.liquid"],
+  "cssVendor": [
+    "node_modules/normalize.css/normalize.css"
+  ],
+  "shopifyUrl": "https://eightcig-2.myshopify.com/?key=c7f6d0a41984770aaa3fbcd4d711becf86423657e548515fa2a009b0ed7c25c7"
 }
