@@ -1,0 +1,6107 @@
+@charset "UTF-8";
+
+// Bourbon 3.2.4
+// http://bourbon.io
+// Copyright 2011-2015 thoughtbot, inc.
+// MIT License
+
+// Settings
+// Variable settings for /addons/prefixer.scss
+$prefix-for-webkit:    true !default;
+$prefix-for-mozilla:   true !default;
+$prefix-for-microsoft: true !default;
+$prefix-for-opera:     true !default;
+$prefix-for-spec:      true !default; // required for keyframe mixin
+
+$em-base: 16px !default;
+
+$asset-pipeline: false !default;
+
+// Custom Helpers
+@function _gradient-positions-parser($gradient-type, $gradient-positions) {
+  @if $gradient-positions
+  and ($gradient-type == linear)
+  and (type-of($gradient-positions) != color) {
+    $gradient-positions: _linear-positions-parser($gradient-positions);
+  }
+  @else if $gradient-positions
+  and ($gradient-type == radial)
+  and (type-of($gradient-positions) != color) {
+    $gradient-positions: _radial-positions-parser($gradient-positions);
+  }
+  @return $gradient-positions;
+}
+
+@function _linear-positions-parser($pos) {
+  $type: type-of(nth($pos, 1));
+  $spec: null;
+  $degree: null;
+  $side: null;
+  $corner: null;
+  $length: length($pos);
+  // Parse Side and corner positions
+  @if ($length > 1) {
+    @if nth($pos, 1) == "to" { // Newer syntax
+      $side: nth($pos, 2);
+
+      @if $length == 2 { // eg. to top
+        // Swap for backwards compatability
+        $degree: _position-flipper(nth($pos, 2));
+      }
+      @else if $length == 3 { // eg. to top left
+        $corner: nth($pos, 3);
+      }
+    }
+    @else if $length == 2 { // Older syntax ("top left")
+      $side: _position-flipper(nth($pos, 1));
+      $corner: _position-flipper(nth($pos, 2));
+    }
+
+    @if ("#{$side} #{$corner}" == "left top") or ("#{$side} #{$corner}" == "top left") {
+      $degree: _position-flipper(#{$side}) _position-flipper(#{$corner});
+    }
+    @else if ("#{$side} #{$corner}" == "right top") or ("#{$side} #{$corner}" == "top right") {
+      $degree: _position-flipper(#{$side}) _position-flipper(#{$corner});
+    }
+    @else if ("#{$side} #{$corner}" == "right bottom") or ("#{$side} #{$corner}" == "bottom right") {
+      $degree: _position-flipper(#{$side}) _position-flipper(#{$corner});
+    }
+    @else if ("#{$side} #{$corner}" == "left bottom") or ("#{$side} #{$corner}" == "bottom left") {
+      $degree: _position-flipper(#{$side}) _position-flipper(#{$corner});
+    }
+    $spec: to $side $corner;
+  }
+  @else if $length == 1 {
+    // Swap for backwards compatability
+    @if $type == string {
+      $degree: $pos;
+      $spec: to _position-flipper($pos);
+    }
+    @else {
+      $degree: -270 - $pos; //rotate the gradient opposite from spec
+      $spec: $pos;
+    }
+  }
+  $degree: unquote($degree + ",");
+  $spec:   unquote($spec + ",");
+  @return $degree $spec;
+}
+
+@function _position-flipper($pos) {
+ @return if($pos == left, right, null)
+         if($pos == right, left, null)
+         if($pos == top, bottom, null)
+         if($pos == bottom, top, null);
+}
+
+@function _radial-arg-parser($G1, $G2, $pos, $shape-size) {
+  @each $value in $G1, $G2 {
+    $first-val: nth($value, 1);
+    $pos-type:  type-of($first-val);
+    $spec-at-index: null;
+
+    // Determine if spec was passed to mixin
+    @if type-of($value) == list {
+      $spec-at-index: if(index($value, at), index($value, at), false);
+    }
+    @if $spec-at-index {
+      @if $spec-at-index > 1 {
+        @for $i from 1 through ($spec-at-index - 1) {
+          $shape-size: $shape-size nth($value, $i);
+        }
+        @for $i from ($spec-at-index + 1) through length($value) {
+          $pos: $pos nth($value, $i);
+        }
+      }
+      @else if $spec-at-index == 1 {
+        @for $i from ($spec-at-index + 1) through length($value) {
+          $pos: $pos nth($value, $i);
+        }
+      }
+      $G1: null;
+    }
+
+    // If not spec calculate correct values
+    @else {
+      @if ($pos-type != color) or ($first-val != "transparent") {
+        @if ($pos-type == number)
+        or ($first-val == "center")
+        or ($first-val == "top")
+        or ($first-val == "right")
+        or ($first-val == "bottom")
+        or ($first-val == "left") {
+
+          $pos: $value;
+
+          @if $pos == $G1 {
+            $G1: null;
+          }
+        }
+
+        @else if
+           ($first-val == "ellipse")
+        or ($first-val == "circle")
+        or ($first-val == "closest-side")
+        or ($first-val == "closest-corner")
+        or ($first-val == "farthest-side")
+        or ($first-val == "farthest-corner")
+        or ($first-val == "contain")
+        or ($first-val == "cover") {
+
+          $shape-size: $value;
+
+          @if $value == $G1 {
+            $G1: null;
+          }
+
+          @else if $value == $G2 {
+            $G2: null;
+          }
+        }
+      }
+    }
+  }
+  @return $G1, $G2, $pos, $shape-size;
+}
+
+@function _radial-positions-parser($gradient-pos) {
+  $shape-size: nth($gradient-pos, 1);
+  $pos:        nth($gradient-pos, 2);
+  $shape-size-spec: _shape-size-stripper($shape-size);
+
+  $pre-spec: unquote(if($pos, "#{$pos}, ", null))
+             unquote(if($shape-size, "#{$shape-size},", null));
+  $pos-spec: if($pos, "at #{$pos}", null);
+
+  $spec: "#{$shape-size-spec} #{$pos-spec}";
+
+  // Add comma
+  @if ($spec != '  ') {
+    $spec: "#{$spec},"
+  }
+
+  @return $pre-spec $spec;
+}
+
+// User for linear and radial gradients within background-image or border-image properties
+
+@function _render-gradients($gradient-positions, $gradients, $gradient-type, $vendor: false) {
+  $pre-spec: null;
+  $spec: null;
+  $vendor-gradients: null;
+  @if $gradient-type == linear {
+    @if $gradient-positions {
+      $pre-spec: nth($gradient-positions, 1);
+      $spec:     nth($gradient-positions, 2);
+    }
+  }
+  @else if $gradient-type == radial {
+    $pre-spec: nth($gradient-positions, 1);
+    $spec:     nth($gradient-positions, 2);
+  }
+
+  @if $vendor {
+    $vendor-gradients: "-#{$vendor}-#{$gradient-type}-gradient(#{$pre-spec} #{$gradients})";
+  }
+  @else if $vendor == false {
+    $vendor-gradients: "#{$gradient-type}-gradient(#{$spec} #{$gradients})";
+  }
+  $vendor-gradients: unquote($vendor-gradients);
+  @return $vendor-gradients;
+}
+
+@function _shape-size-stripper($shape-size) {
+  $shape-size-spec: null;
+  @each $value in $shape-size {
+    @if ($value == "cover") or ($value == "contain") {
+      $value: null;
+    }
+    $shape-size-spec: "#{$shape-size-spec} #{$value}";
+  }
+  @return $shape-size-spec;
+}
+
+// Custom Functions
+// Programatically determines whether a color is light or dark
+// Returns a boolean
+// More details here http://robots.thoughtbot.com/closer-look-color-lightness
+
+@function is-light($hex-color) {
+  $-local-red: red(rgba($hex-color, 1.0));
+  $-local-green: green(rgba($hex-color, 1.0));
+  $-local-blue: blue(rgba($hex-color, 1.0));
+
+  $-local-lightness: ($-local-red * 0.2126 + $-local-green * 0.7152 + $-local-blue * 0.0722) / 255;
+
+  @return $-local-lightness > .6;
+}
+
+// Flexible grid
+@function flex-grid($columns, $container-columns: $fg-max-columns) {
+  $width: $columns * $fg-column + ($columns - 1) * $fg-gutter;
+  $container-width: $container-columns * $fg-column + ($container-columns - 1) * $fg-gutter;
+  @return percentage($width / $container-width);
+}
+
+// Flexible gutter
+@function flex-gutter($container-columns: $fg-max-columns, $gutter: $fg-gutter) {
+  $container-width: $container-columns * $fg-column + ($container-columns - 1) * $fg-gutter;
+  @return percentage($gutter / $container-width);
+}
+
+// The $fg-column, $fg-gutter and $fg-max-columns variables must be defined in your base stylesheet to properly use the flex-grid function.
+// This function takes the fluid grid equation (target / context = result) and uses columns to help define each.
+//
+// The calculation presumes that your column structure will be missing the last gutter:
+//
+//   -- column -- gutter -- column -- gutter -- column
+//
+//  $fg-column: 60px;             // Column Width
+//  $fg-gutter: 25px;             // Gutter Width
+//  $fg-max-columns: 12;          // Total Columns For Main Container
+//
+//  div {
+//    width: flex-grid(4);        // returns (315px / 995px) = 31.65829%;
+//    margin-left: flex-gutter(); // returns (25px / 995px) = 2.51256%;
+//
+//    p {
+//      width: flex-grid(2, 4);  // returns (145px / 315px) = 46.031746%;
+//      float: left;
+//      margin: flex-gutter(4);  // returns (25px / 315px) = 7.936508%;
+//    }
+//
+//    blockquote {
+//      float: left;
+//      width: flex-grid(2, 4); // returns (145px / 315px) = 46.031746%;
+//    }
+//  }
+@function golden-ratio($value, $increment) {
+  @return modular-scale($value, $increment, $golden)
+}
+
+@function grid-width($n) {
+  @return $n * $gw-column + ($n - 1) * $gw-gutter;
+}
+
+// The $gw-column and $gw-gutter variables must be defined in your base stylesheet to properly use the grid-width function.
+//
+//  $gw-column: 100px;         // Column Width
+//  $gw-gutter: 40px;          // Gutter Width
+//
+//  div {
+//    width: grid-width(4);    // returns 520px;
+//    margin-left: $gw-gutter; // returns 40px;
+//  }
+
+@function linear-gradient($pos, $gradients...) {
+  $type: linear;
+  $pos-type: type-of(nth($pos, 1));
+
+  // if $pos doesn't exist, fix $gradient
+  @if ($pos-type == color) or (nth($pos, 1) == "transparent")  {
+    $gradients: zip($pos $gradients);
+    $pos: false;
+  }
+
+  $type-gradient: $type, $pos, $gradients;
+  @return $type-gradient;
+}
+
+// Scaling Variables
+$golden:           1.618;
+$minor-second:     1.067;
+$major-second:     1.125;
+$minor-third:      1.2;
+$major-third:      1.25;
+$perfect-fourth:   1.333;
+$augmented-fourth: 1.414;
+$perfect-fifth:    1.5;
+$minor-sixth:      1.6;
+$major-sixth:      1.667;
+$minor-seventh:    1.778;
+$major-seventh:    1.875;
+$octave:           2;
+$major-tenth:      2.5;
+$major-eleventh:   2.667;
+$major-twelfth:    3;
+$double-octave:    4;
+
+@function modular-scale($value, $increment, $ratio) {
+  $v1: nth($value, 1);
+  $v2: nth($value, length($value));
+  $value: $v1;
+
+  // scale $v2 to just above $v1
+  @while $v2 > $v1 {
+    $v2: ($v2 / $ratio); // will be off-by-1
+  }
+  @while $v2 < $v1 {
+    $v2: ($v2 * $ratio); // will fix off-by-1
+  }
+
+  // check AFTER scaling $v2 to prevent double-counting corner-case
+  $double-stranded: $v2 > $v1;
+
+  @if $increment > 0 {
+    @for $i from 1 through $increment {
+      @if $double-stranded and ($v1 * $ratio) > $v2 {
+        $value: $v2;
+        $v2: ($v2 * $ratio);
+      } @else {
+        $v1: ($v1 * $ratio);
+        $value: $v1;
+      }
+    }
+  }
+
+  @if $increment < 0 {
+    // adjust $v2 to just below $v1
+    @if $double-stranded {
+      $v2: ($v2 / $ratio);
+    }
+
+    @for $i from $increment through -1 {
+      @if $double-stranded and ($v1 / $ratio) < $v2 {
+        $value: $v2;
+        $v2: ($v2 / $ratio);
+      } @else {
+        $v1: ($v1 / $ratio);
+        $value: $v1;
+      }
+    }
+  }
+
+  @return $value;
+}
+
+// Convert pixels to ems
+// eg. for a relational value of 12px write em(12) when the parent is 16px
+// if the parent is another value say 24px write em(12, 24)
+
+@function em($pxval, $base: $em-base) {
+  @if not unitless($pxval) {
+      $pxval: strip-units($pxval);
+  }
+  @if not unitless($base) {
+      $base: strip-units($base);
+  }
+  @return ($pxval / $base) * 1em;
+}
+
+// Convert pixels to rems
+// eg. for a relational value of 12px write rem(12)
+// Assumes $em-base is the font-size of <html>
+
+@function rem($pxval) {
+  @if not unitless($pxval) {
+      $pxval: strip-units($pxval);
+  }
+
+  $base: $em-base;
+  @if not unitless($base) {
+      $base: strip-units($base);
+  }
+  @return ($pxval / $base) * 1rem;
+}
+
+// This function is required and used by the background-image mixin.
+@function radial-gradient($G1,        $G2,
+                          $G3: null,  $G4: null,
+                          $G5: null,  $G6: null,
+                          $G7: null,  $G8: null,
+                          $G9: null,  $G10: null,
+                          $pos: null,
+                          $shape-size: null) {
+
+  $data: _radial-arg-parser($G1, $G2, $pos, $shape-size);
+  $G1:  nth($data, 1);
+  $G2:  nth($data, 2);
+  $pos: nth($data, 3);
+  $shape-size: nth($data, 4);
+
+  $type: radial;
+  $gradient: $G1, $G2, $G3, $G4, $G5, $G6, $G7, $G8, $G9, $G10;
+
+  $type-gradient: $type, $shape-size $pos, $gradient;
+  @return $type-gradient;
+}
+
+
+
+// Srtips the units from a value. e.g. 12px -> 12
+
+@function strip-units($val) {
+  @return ($val / ($val * 0 + 1));
+}
+
+// Add percentage of white to a color
+@function tint($color, $percent){
+  @return mix(white, $color, $percent);
+}
+
+// Add percentage of black to a color
+@function shade($color, $percent){
+  @return mix(black, $color, $percent);
+}
+
+// Return vendor-prefixed property names if appropriate
+// Example: transition-property-names((transform, color, background), moz) -> -moz-transform, color, background
+//************************************************************************//
+@function transition-property-names($props, $vendor: false) {
+	$new-props: ();
+	
+	@each $prop in $props {
+		$new-props: append($new-props, transition-property-name($prop, $vendor), comma);
+	}
+
+	@return $new-props;
+}
+
+@function transition-property-name($prop, $vendor: false) {
+	// put other properties that need to be prefixed here aswell
+	@if $vendor and $prop == transform {
+		@return unquote('-'+$vendor+'-'+$prop);
+	}
+	@else {
+		@return $prop;
+	}
+}
+// Convert shorthand to the 4-value syntax
+
+@function unpack($shorthand) {
+  @if length($shorthand) == 1 {
+    @return nth($shorthand, 1) nth($shorthand, 1) nth($shorthand, 1) nth($shorthand, 1);
+  }
+  @else if length($shorthand) == 2 {
+    @return nth($shorthand, 1) nth($shorthand, 2) nth($shorthand, 1) nth($shorthand, 2);
+  }
+  @else if length($shorthand) == 3 {
+    @return nth($shorthand, 1) nth($shorthand, 2) nth($shorthand, 3) nth($shorthand, 2);
+  }
+  @else {
+    @return $shorthand;
+  }
+}
+
+
+// CSS3 Mixins
+// http://www.w3.org/TR/css3-animations/#the-animation-name-property-
+// Each of these mixins support comma separated lists of values, which allows different transitions for individual properties to be described in a single style rule. Each value in the list corresponds to the value at that same position in the other properties.
+
+// Official animation shorthand property.
+@mixin animation ($animations...) {
+  @include prefixer(animation, $animations, webkit moz spec);
+}
+
+// Individual Animation Properties
+@mixin animation-name ($names...) {
+  @include prefixer(animation-name, $names, webkit moz spec);
+}
+
+
+@mixin animation-duration ($times...) {
+  @include prefixer(animation-duration, $times, webkit moz spec);
+}
+
+
+@mixin animation-timing-function ($motions...) {
+// ease | linear | ease-in | ease-out | ease-in-out
+  @include prefixer(animation-timing-function, $motions, webkit moz spec);
+}
+
+
+@mixin animation-iteration-count ($values...) {
+// infinite | <number>
+  @include prefixer(animation-iteration-count, $values, webkit moz spec);
+}
+
+
+@mixin animation-direction ($directions...) {
+// normal | alternate
+  @include prefixer(animation-direction, $directions, webkit moz spec);
+}
+
+
+@mixin animation-play-state ($states...) {
+// running | paused
+  @include prefixer(animation-play-state, $states, webkit moz spec);
+}
+
+
+@mixin animation-delay ($times...) {
+  @include prefixer(animation-delay, $times, webkit moz spec);
+}
+
+
+@mixin animation-fill-mode ($modes...) {
+// none | forwards | backwards | both
+  @include prefixer(animation-fill-mode, $modes, webkit moz spec);
+}
+
+@mixin appearance ($value) {
+  @include prefixer(appearance, $value, webkit moz ms o spec);
+}
+
+//************************************************************************//
+// Backface-visibility mixin
+//************************************************************************//
+@mixin backface-visibility($visibility) {
+  @include prefixer(backface-visibility, $visibility, webkit spec);
+}
+
+//************************************************************************//
+// Background property for adding multiple backgrounds using shorthand
+// notation.
+//************************************************************************//
+
+@mixin background(
+  $background-1       , $background-2: null,
+  $background-3: null, $background-4: null,
+  $background-5: null, $background-6: null,
+  $background-7: null, $background-8: null,
+  $background-9: null, $background-10: null,
+  $fallback: null
+) {
+  $backgrounds: $background-1, $background-2,
+                $background-3, $background-4,
+                $background-5, $background-6,
+                $background-7, $background-8,
+                $background-9, $background-10;
+
+  $fallback-color: false;
+  @if (type-of($fallback) == color) or ($fallback == "transparent") {
+    $fallback-color: $fallback;
+  }
+  @else {
+    $fallback-color: _extract-background-color($backgrounds);
+  }
+
+  @if $fallback-color {
+    background-color: $fallback-color;
+  }
+  background: _background-add-prefix($backgrounds, webkit);
+  background: _background-add-prefix($backgrounds);
+}
+
+@function _extract-background-color($backgrounds) {
+  $final-bg-layer: nth($backgrounds, length($backgrounds));
+  @if type-of($final-bg-layer) == list {
+    @for $i from 1 through length($final-bg-layer) {
+      $value: nth($final-bg-layer, $i);
+      @if type-of($value) == color {
+        @return $value;
+      }
+    }
+  }
+  @return false;
+}
+
+@function _background-add-prefix($backgrounds, $vendor: false) {
+  $backgrounds-prefixed: ();
+
+  @for $i from 1 through length($backgrounds) {
+    $shorthand: nth($backgrounds, $i); // Get member for current index
+    $type: type-of($shorthand); // Get type of variable - List (gradient) or String (image)
+
+    // If shorthand is a list (gradient)
+    @if $type == list {
+      $first-member: nth($shorthand, 1); // Get first member of shorthand
+
+      // Linear Gradient
+      @if index(linear radial, nth($first-member, 1)) {
+        $gradient-type: nth($first-member, 1); // linear || radial
+        $gradient-args:      false;
+        $gradient-positions: false;
+        $shorthand-start:    false;
+        @if type-of($first-member) == list { // Linear gradient plus additional shorthand values - lg(red,orange)repeat,...
+          $gradient-positions: nth($first-member, 2);
+          $gradient-args:      nth($first-member, 3);
+          $shorthand-start: 2;
+        }
+        @else { // Linear gradient only - lg(red,orange),...
+          $gradient-positions: nth($shorthand, 2);
+          $gradient-args:      nth($shorthand, 3); // Get gradient (red, blue)
+        }
+
+        $gradient-positions: _gradient-positions-parser($gradient-type, $gradient-positions);
+        $gradient: _render-gradients($gradient-positions, $gradient-args, $gradient-type, $vendor);
+
+        // Append any additional shorthand args to gradient
+        @if $shorthand-start {
+          @for $j from $shorthand-start through length($shorthand) {
+            $gradient: join($gradient, nth($shorthand, $j), space);
+          }
+        }
+        $backgrounds-prefixed: append($backgrounds-prefixed, $gradient, comma);
+      }
+      // Image with additional properties
+      @else {
+        $backgrounds-prefixed: append($backgrounds-prefixed, $shorthand, comma);
+      }
+    }
+    // If shorthand is a simple string (color or image)
+    @else if $type == string {
+      $backgrounds-prefixed: join($backgrounds-prefixed, $shorthand, comma);
+    }
+  }
+  @return $backgrounds-prefixed;
+}
+
+//Examples:
+  //@include background(linear-gradient(top, orange, red));
+  //@include background(radial-gradient(circle at 40% 40%, orange, red));
+  //@include background(url("/images/a.png") no-repeat, linear-gradient(orange, red));
+  //@include background(url("image.png") center center, linear-gradient(orange, red), url("image.png"));
+
+//************************************************************************//
+// Background-image property for adding multiple background images with
+// gradients, or for stringing multiple gradients together.
+//************************************************************************//
+
+@mixin background-image($images...) {
+  background-image: _add-prefix($images, webkit);
+  background-image: _add-prefix($images);
+}
+
+@function _add-prefix($images, $vendor: false) {
+  $images-prefixed: ();
+  $gradient-positions: false;
+  @for $i from 1 through length($images) {
+    $type: type-of(nth($images, $i)); // Get type of variable - List or String
+
+    // If variable is a list - Gradient
+    @if $type == list {
+      $gradient-type: nth(nth($images, $i), 1); // linear or radial
+      $gradient-pos: null;
+      $gradient-args: null;
+
+      @if ($gradient-type == linear) or ($gradient-type == radial) {
+        $gradient-pos:  nth(nth($images, $i), 2); // Get gradient position
+        $gradient-args: nth(nth($images, $i), 3); // Get actual gradient (red, blue)
+      }
+      @else {
+        $gradient-args: nth(nth($images, $i), 2); // Get actual gradient (red, blue)
+      }
+
+      $gradient-positions: _gradient-positions-parser($gradient-type, $gradient-pos);
+      $gradient: _render-gradients($gradient-positions, $gradient-args, $gradient-type, $vendor);
+      $images-prefixed: append($images-prefixed, $gradient, comma);
+    }
+    // If variable is a string - Image
+    @else if $type == string {
+      $images-prefixed: join($images-prefixed, nth($images, $i), comma);
+    }
+  }
+  @return $images-prefixed;
+}
+
+//Examples:
+  //@include background-image(linear-gradient(top, orange, red));
+  //@include background-image(radial-gradient(50% 50%, cover circle, orange, red));
+  //@include background-image(url("/images/a.png"), linear-gradient(orange, red));
+  //@include background-image(url("image.png"), linear-gradient(orange, red), url("image.png"));
+  //@include background-image(linear-gradient(hsla(0, 100%, 100%, 0.25) 0%, hsla(0, 100%, 100%, 0.08) 50%, transparent 50%), linear-gradient(orange, red));
+
+@mixin border-image($images) {
+  -webkit-border-image: _border-add-prefix($images, webkit);
+     -moz-border-image: _border-add-prefix($images, moz);
+       -o-border-image: _border-add-prefix($images, o);
+          border-image: _border-add-prefix($images);
+          border-style: solid;
+}
+
+@function _border-add-prefix($images, $vendor: false) {
+  $border-image: null;
+  $images-type:  type-of(nth($images, 1));
+  $first-var:    nth(nth($images, 1), 1);          // Get type of Gradient (Linear || radial)
+
+  // If input is a gradient
+  @if $images-type == string {
+    @if ($first-var == "linear") or ($first-var == "radial") {
+      $gradient-type: nth($images, 1);           // Get type of gradient (linear || radial)
+      $gradient-pos:  nth($images, 2);           // Get gradient position
+      $gradient-args: nth($images, 3);           // Get actual gradient (red, blue)
+      $gradient-positions: _gradient-positions-parser($gradient-type, $gradient-pos);
+      $border-image:  _render-gradients($gradient-positions, $gradient-args, $gradient-type, $vendor);
+    }
+    // If input is a URL
+    @else {
+      $border-image: $images;
+    }
+  }
+  // If input is gradient or url + additional args
+  @else if $images-type == list {
+    $type: type-of(nth($images, 1));           // Get type of variable - List or String
+
+    // If variable is a list - Gradient
+    @if $type == list {
+      $gradient: nth($images, 1);
+      $gradient-type: nth($gradient, 1);           // Get type of gradient (linear || radial)
+      $gradient-pos:  nth($gradient, 2);           // Get gradient position
+      $gradient-args: nth($gradient, 3);           // Get actual gradient (red, blue)
+      $gradient-positions: _gradient-positions-parser($gradient-type, $gradient-pos);
+      $border-image:  _render-gradients($gradient-positions, $gradient-args, $gradient-type, $vendor);
+
+      @for $i from 2 through length($images) {
+        $border-image: append($border-image, nth($images, $i));
+      }
+    }
+  }
+  @return $border-image;
+}
+
+//Examples:
+// @include border-image(url("image.png"));
+// @include border-image(url("image.png") 20 stretch);
+// @include border-image(linear-gradient(45deg, orange, yellow));
+// @include border-image(linear-gradient(45deg, orange, yellow) stretch);
+// @include border-image(linear-gradient(45deg, orange, yellow) 20 30 40 50 stretch round);
+// @include border-image(radial-gradient(top, cover, orange, yellow, orange));
+
+
+//************************************************************************//
+// Shorthand Border-radius mixins
+//************************************************************************//
+@mixin border-top-radius($radii) {
+  @include prefixer(border-top-left-radius, $radii, spec);
+  @include prefixer(border-top-right-radius, $radii, spec);
+}
+
+@mixin border-bottom-radius($radii) {
+  @include prefixer(border-bottom-left-radius, $radii, spec);
+  @include prefixer(border-bottom-right-radius, $radii, spec);
+}
+
+@mixin border-left-radius($radii) {
+  @include prefixer(border-top-left-radius, $radii, spec);
+  @include prefixer(border-bottom-left-radius, $radii, spec);
+}
+
+@mixin border-right-radius($radii) {
+  @include prefixer(border-top-right-radius, $radii, spec);
+  @include prefixer(border-bottom-right-radius, $radii, spec);
+}
+
+@mixin box-sizing ($box) {
+//  content-box | border-box | inherit
+  @include prefixer(box-sizing, $box, webkit moz spec);
+}
+
+@mixin calc($property, $value) {
+  #{$property}: -webkit-calc(#{$value});
+  #{$property}:         calc(#{$value});
+}
+
+@mixin columns($arg: auto) {
+// <column-count> || <column-width>
+  @include prefixer(columns, $arg, webkit moz spec);
+}
+
+@mixin column-count($int: auto) {
+// auto || integer
+  @include prefixer(column-count, $int, webkit moz spec);
+}
+
+@mixin column-gap($length: normal) {
+// normal || length
+  @include prefixer(column-gap, $length, webkit moz spec);
+}
+
+@mixin column-fill($arg: auto) {
+// auto || length
+  @include prefixer(column-fill, $arg, webkit moz spec);
+}
+
+@mixin column-rule($arg) {
+// <border-width> || <border-style> || <color>
+  @include prefixer(column-rule, $arg, webkit moz spec);
+}
+
+@mixin column-rule-color($color) {
+  @include prefixer(column-rule-color, $color, webkit moz spec);
+}
+
+@mixin column-rule-style($style: none) {
+// none | hidden | dashed | dotted | double | groove | inset | inset | outset | ridge | solid
+  @include prefixer(column-rule-style, $style, webkit moz spec);
+}
+
+@mixin column-rule-width ($width: none) {
+  @include prefixer(column-rule-width, $width, webkit moz spec);
+}
+
+@mixin column-span($arg: none) {
+// none || all
+  @include prefixer(column-span, $arg, webkit moz spec);
+}
+
+@mixin column-width($length: auto) {
+// auto || length
+  @include prefixer(column-width, $length, webkit moz spec);
+}
+
+@mixin filter($function: none) {
+  // <filter-function> [<filter-function]* | none
+  @include prefixer(filter, $function, webkit spec);
+}
+
+
+// CSS3 Flexible Box Model and property defaults
+
+// Custom shorthand notation for flexbox
+@mixin box($orient: inline-axis, $pack: start, $align: stretch) {
+  @include display-box;
+  @include box-orient($orient);
+  @include box-pack($pack);
+  @include box-align($align);
+}
+
+@mixin display-box {
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox; // IE 10
+  display: box;
+}
+
+@mixin box-orient($orient: inline-axis) {
+// horizontal|vertical|inline-axis|block-axis|inherit
+  @include prefixer(box-orient, $orient, webkit moz spec);
+}
+
+@mixin box-pack($pack: start) {
+// start|end|center|justify
+  @include prefixer(box-pack, $pack, webkit moz spec);
+  -ms-flex-pack: $pack; // IE 10
+}
+
+@mixin box-align($align: stretch) {
+// start|end|center|baseline|stretch
+  @include prefixer(box-align, $align, webkit moz spec);
+  -ms-flex-align: $align; // IE 10
+}
+
+@mixin box-direction($direction: normal) {
+// normal|reverse|inherit
+  @include prefixer(box-direction, $direction, webkit moz spec);
+  -ms-flex-direction: $direction; // IE 10
+}
+
+@mixin box-lines($lines: single) {
+// single|multiple
+  @include prefixer(box-lines, $lines, webkit moz spec);
+}
+
+@mixin box-ordinal-group($int: 1) {
+  @include prefixer(box-ordinal-group, $int, webkit moz spec);
+  -ms-flex-order: $int; // IE 10
+}
+
+@mixin box-flex($value: 0.0) {
+  @include prefixer(box-flex, $value, webkit moz spec);
+  -ms-flex: $value; // IE 10
+}
+
+@mixin box-flex-group($int: 1) {
+  @include prefixer(box-flex-group, $int, webkit moz spec);
+}
+
+// CSS3 Flexible Box Model and property defaults
+// Unified attributes for 2009, 2011, and 2012 flavours.
+
+// 2009 - display (box | inline-box)
+// 2011 - display (flexbox | inline-flexbox)
+// 2012 - display (flex | inline-flex)
+@mixin display($value) {
+//  flex | inline-flex
+    @if $value == "flex" {
+        // 2009
+        display: -webkit-box;
+        display: -moz-box;
+        display: box;
+
+        // 2012
+        display: -webkit-flex;
+        display: -moz-flex;
+        display: -ms-flexbox; // 2011 (IE 10)
+        display: flex;
+    }
+
+    @else if $value == "inline-flex" {
+        display: -webkit-inline-box;
+        display: -moz-inline-box;
+        display: inline-box;
+
+        display: -webkit-inline-flex;
+        display: -moz-inline-flex;
+        display: -ms-inline-flexbox;
+        display: inline-flex;
+    }
+
+    @else {
+        display: $value;
+    }
+}
+
+// 2009 - box-flex (integer)
+// 2011 - flex (decimal | width decimal)
+// 2012 - flex (integer integer width)
+@mixin flex($value) {
+
+    // Grab flex-grow for older browsers.
+    $flex-grow: nth($value, 1);
+
+    // 2009
+    @include prefixer(box-flex, $flex-grow, webkit moz spec);
+
+    // 2011 (IE 10), 2012
+    @include prefixer(flex, $value, webkit moz ms spec);
+}
+
+// 2009 - box-orient ( horizontal | vertical | inline-axis | block-axis)
+//      - box-direction (normal | reverse)      
+// 2011 - flex-direction (row | row-reverse | column | column-reverse)
+// 2012 - flex-direction (row | row-reverse | column | column-reverse)
+@mixin flex-direction($value: row) {
+
+    // Alt values.
+    $value-2009: $value;
+    $value-2011: $value;
+    $direction: "normal";
+
+    @if $value == row {
+        $value-2009: horizontal;
+    }
+
+    @else if $value == "row-reverse" {
+        $value-2009: horizontal;
+        $direction: reverse;
+    }
+
+    @else if $value == column {
+        $value-2009: vertical;
+    }
+
+    @else if $value == "column-reverse" {
+        $value-2009: vertical;
+        $direction: reverse;
+    }
+
+    // 2009
+    @include prefixer(box-orient, $value-2009, webkit moz spec);
+    @if $direction == "reverse" {
+        @include prefixer(box-direction, $direction, webkit moz spec);
+    }
+
+    // 2012
+    @include prefixer(flex-direction, $value, webkit moz spec);
+
+    // 2011 (IE 10)
+    -ms-flex-direction: $value;
+}
+
+// 2009 - box-lines (single | multiple)
+// 2011 - flex-wrap (nowrap | wrap | wrap-reverse)
+// 2012 - flex-wrap (nowrap | wrap | wrap-reverse)
+@mixin flex-wrap($value: nowrap) {
+
+    // Alt values.
+    $alt-value: $value;
+    @if $value == nowrap {
+        $alt-value: single;
+    }
+
+    @else if $value == wrap {
+        $alt-value: multiple;
+    }
+
+    @else if $value == "wrap-reverse" {
+        $alt-value: multiple;
+    }
+
+    @include prefixer(box-lines, $alt-value, webkit moz spec);
+    @include prefixer(flex-wrap, $value, webkit moz ms spec);
+}
+
+// 2009 - TODO: parse values into flex-direction/flex-wrap
+// 2011 - TODO: parse values into flex-direction/flex-wrap
+// 2012 - flex-flow (flex-direction || flex-wrap)
+@mixin flex-flow($value) {
+    @include prefixer(flex-flow, $value, webkit moz spec);
+}
+
+// 2009 - box-ordinal-group (integer)
+// 2011 - flex-order (integer)
+// 2012 - order (integer)
+@mixin order($int: 0) {
+    // 2009
+    @include prefixer(box-ordinal-group, $int, webkit moz spec);
+
+    // 2012
+    @include prefixer(order, $int, webkit moz spec);
+
+    // 2011 (IE 10)
+    -ms-flex-order: $int;
+}
+
+// 2012 - flex-grow (number)
+@mixin flex-grow($number: 0) {
+    @include prefixer(flex-grow, $number, webkit moz spec);
+    -ms-flex-positive: $number;
+}
+
+// 2012 - flex-shrink (number)
+@mixin flex-shrink($number: 1) {
+    @include prefixer(flex-shrink, $number, webkit moz spec);
+    -ms-flex-negative: $number;
+}
+
+// 2012 - flex-basis (number)
+@mixin flex-basis($width: auto) {
+    @include prefixer(flex-basis, $width, webkit moz spec);
+    -ms-flex-preferred-size: $width;
+}
+
+// 2009 - box-pack (start | end | center | justify)
+// 2011 - flex-pack (start | end | center | justify)
+// 2012 - justify-content (flex-start | flex-end | center | space-between | space-around)
+@mixin justify-content ($value: flex-start) {
+
+    // Alt values.
+    $alt-value: $value;
+    @if $value == "flex-start" {
+        $alt-value: start;
+    }
+
+    @else if $value == "flex-end" {
+        $alt-value: end;
+    }
+
+    @else if $value == "space-between" {
+        $alt-value: justify;
+    }
+
+    @else if $value == "space-around" {
+        $alt-value: center;
+    }
+
+    // 2009
+    @include prefixer(box-pack, $alt-value, webkit moz spec);
+
+    // 2012
+    @include prefixer(justify-content, $value, webkit moz ms o spec);
+
+    // 2011 (IE 10)
+    -ms-flex-pack: $alt-value;
+}
+
+// 2009 - box-align (start | end | center | baseline | stretch)
+// 2011 - flex-align (start | end | center | baseline | stretch)
+// 2012 - align-items (flex-start | flex-end | center | baseline | stretch)
+@mixin align-items($value: stretch) {
+
+    $alt-value: $value;
+
+    @if $value == "flex-start" {
+        $alt-value: start;
+    }    
+
+    @else if $value == "flex-end" {
+        $alt-value: end;
+    }
+
+    // 2009
+    @include prefixer(box-align, $alt-value, webkit moz spec);
+
+    // 2012
+    @include prefixer(align-items, $value, webkit moz ms o spec);
+    
+    // 2011 (IE 10)
+    -ms-flex-align: $alt-value;    
+}
+
+// 2011 - flex-item-align (auto | start | end | center | baseline | stretch)
+// 2012 - align-self (auto | flex-start | flex-end | center | baseline | stretch)
+@mixin align-self($value: auto) {
+
+    $value-2011: $value;
+    @if $value == "flex-start" {
+        $value-2011: start;
+    }    
+
+    @else if $value == "flex-end" {
+        $value-2011: end;
+    }
+
+    // 2012
+    @include prefixer(align-self, $value, webkit moz spec);
+
+    // 2011 (IE 10)
+    -ms-flex-item-align: $value-2011;
+}
+
+// 2011 - flex-line-pack (start | end | center | justify | distribute | stretch)
+// 2012 - align-content (flex-start | flex-end | center | space-between | space-around | stretch)
+@mixin align-content($value: stretch) {
+
+    $value-2011: $value;
+    @if $value == "flex-start" {
+        $value-2011: start;
+    }    
+
+    @else if $value == "flex-end" {
+        $value-2011: end;
+    }
+
+    @else if $value == "space-between" {
+        $value-2011: justify;
+    }
+
+    @else if $value == "space-around" {
+        $value-2011: distribute;
+    }
+
+    // 2012
+    @include prefixer(align-content, $value, webkit moz spec);
+
+    // 2011 (IE 10)
+    -ms-flex-line-pack: $value-2011;
+}
+
+
+// Order of the includes matters, and it is: normal, bold, italic, bold+italic.
+
+@mixin font-face($font-family, $file-path, $weight: normal, $style: normal, $asset-pipeline: $asset-pipeline) {
+  @font-face {
+    font-family: $font-family;
+    font-weight: $weight;
+    font-style: $style;
+
+    @if $asset-pipeline == true {
+      src: font-url('#{$file-path}.eot');
+      src: font-url('#{$file-path}.eot?#iefix')          format('embedded-opentype'),
+           font-url('#{$file-path}.woff')                format('woff'),
+           font-url('#{$file-path}.ttf')                 format('truetype'),
+           font-url('#{$file-path}.svg##{$font-family}') format('svg');
+    } @else {
+      src: url('#{$file-path}.eot');
+      src: url('#{$file-path}.eot?#iefix')               format('embedded-opentype'),
+           url('#{$file-path}.woff')                     format('woff'),
+           url('#{$file-path}.ttf')                      format('truetype'),
+           url('#{$file-path}.svg##{$font-family}')      format('svg');
+    }
+  }
+}
+
+// Font feature settings mixin and property default.
+// Examples: @include font-feature-settings("liga");
+//           @include font-feature-settings("lnum" false);
+//           @include font-feature-settings("pnum" 1, "kern" 0);
+//           @include font-feature-settings("ss01", "ss02");
+
+@mixin font-feature-settings($settings...) {
+  @if length($settings) == 0 { $settings: none; }
+  @include prefixer(font-feature-settings, $settings, webkit moz ms spec);
+}
+@mixin hyphens($hyphenation: none) {
+// none | manual | auto
+  @include prefixer(hyphens, $hyphenation, webkit moz ms spec);
+}
+// HiDPI mixin. Default value set to 1.3 to target Google Nexus 7 (http://bjango.com/articles/min-device-pixel-ratio/)
+@mixin hidpi($ratio: 1.3) {
+  @media only screen and (-webkit-min-device-pixel-ratio: $ratio),
+  only screen and (min--moz-device-pixel-ratio: $ratio),
+  only screen and (-o-min-device-pixel-ratio: #{$ratio}/1),
+  only screen and (min-resolution: #{round($ratio*96)}dpi),
+  only screen and (min-resolution: #{$ratio}dppx) {
+    @content;
+  }
+}
+
+@mixin image-rendering ($mode:auto) {
+
+  @if ($mode == crisp-edges) {
+      -ms-interpolation-mode: nearest-neighbor; // IE8+
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -o-crisp-edges;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+  }
+
+  @else {
+      image-rendering: $mode;
+  }
+}
+
+// Legacy support for inline-block in IE7 (maybe IE6)
+@mixin inline-block {
+  display: inline-block;
+  vertical-align: baseline;
+  zoom: 1;
+  *display: inline;
+  *vertical-align: auto;
+}
+
+// Adds keyframes blocks for supported prefixes, removing redundant prefixes in the block's content
+@mixin keyframes($name) {
+  $original-prefix-for-webkit:    $prefix-for-webkit;
+  $original-prefix-for-mozilla:   $prefix-for-mozilla;
+  $original-prefix-for-microsoft: $prefix-for-microsoft;
+  $original-prefix-for-opera:     $prefix-for-opera;
+  $original-prefix-for-spec:      $prefix-for-spec;
+
+  @if $original-prefix-for-webkit {
+    @include disable-prefix-for-all();
+    $prefix-for-webkit: true;
+    @-webkit-keyframes #{$name} {
+      @content;
+    }
+  }
+  @if $original-prefix-for-mozilla {
+    @include disable-prefix-for-all();
+    $prefix-for-mozilla: true;
+    @-moz-keyframes #{$name} {
+      @content;
+    }
+  }
+
+  $prefix-for-webkit:    $original-prefix-for-webkit;
+  $prefix-for-mozilla:   $original-prefix-for-mozilla;
+  $prefix-for-microsoft: $original-prefix-for-microsoft;
+  $prefix-for-opera:     $original-prefix-for-opera;
+  $prefix-for-spec:      $original-prefix-for-spec;
+
+  @if $original-prefix-for-spec {
+    @keyframes #{$name} {
+      @content;
+    }
+  }
+}
+
+@mixin linear-gradient($pos, $G1, $G2: null,
+                       $G3: null, $G4: null,
+                       $G5: null, $G6: null,
+                       $G7: null, $G8: null,
+                       $G9: null, $G10: null,
+                       $fallback: null) {
+  // Detect what type of value exists in $pos
+  $pos-type: type-of(nth($pos, 1));
+  $pos-spec: null;
+  $pos-degree: null;
+
+  // If $pos is missing from mixin, reassign vars and add default position
+  @if ($pos-type == color) or (nth($pos, 1) == "transparent")  {
+    $G10: $G9; $G9: $G8; $G8: $G7; $G7: $G6; $G6: $G5;
+     $G5: $G4; $G4: $G3; $G3: $G2; $G2: $G1; $G1: $pos;
+     $pos: null;
+  }
+
+  @if $pos {
+    $positions: _linear-positions-parser($pos);
+    $pos-degree: nth($positions, 1);
+    $pos-spec:   nth($positions, 2);
+  }
+
+  $full: $G1, $G2, $G3, $G4, $G5, $G6, $G7, $G8, $G9, $G10;
+
+  // Set $G1 as the default fallback color
+  $fallback-color: nth($G1, 1);
+
+  // If $fallback is a color use that color as the fallback color
+  @if (type-of($fallback) == color) or ($fallback == "transparent") {
+    $fallback-color: $fallback;
+  }
+
+  background-color: $fallback-color;
+  background-image: -webkit-linear-gradient($pos-degree $full); // Safari 5.1+, Chrome
+  background-image: unquote("linear-gradient(#{$pos-spec}#{$full})");
+}
+
+@mixin perspective($depth: none) {
+  // none | <length>
+  @include prefixer(perspective, $depth, webkit moz spec);
+}
+
+@mixin perspective-origin($value: 50% 50%) {
+  @include prefixer(perspective-origin, $value, webkit moz spec);
+}
+
+// Requires Sass 3.1+
+@mixin radial-gradient($G1,        $G2,
+                       $G3: null, $G4: null,
+                       $G5: null, $G6: null,
+                       $G7: null, $G8: null,
+                       $G9: null, $G10: null,
+                       $pos: null,
+                       $shape-size: null,
+                       $fallback: null) {
+
+  $data: _radial-arg-parser($G1, $G2, $pos, $shape-size);
+  $G1:  nth($data, 1);
+  $G2:  nth($data, 2);
+  $pos: nth($data, 3);
+  $shape-size: nth($data, 4);
+
+  $full: $G1, $G2, $G3, $G4, $G5, $G6, $G7, $G8, $G9, $G10;
+
+  // Strip deprecated cover/contain for spec
+  $shape-size-spec: _shape-size-stripper($shape-size);
+
+  // Set $G1 as the default fallback color
+  $first-color: nth($full, 1);
+  $fallback-color: nth($first-color, 1);
+
+  @if (type-of($fallback) == color) or ($fallback == "transparent") {
+    $fallback-color: $fallback;
+  }
+
+  // Add Commas and spaces
+  $shape-size: if($shape-size, '#{$shape-size}, ', null);
+  $pos:        if($pos, '#{$pos}, ', null);
+  $pos-spec:   if($pos, 'at #{$pos}', null);
+  $shape-size-spec: if(($shape-size-spec != ' ') and ($pos == null), '#{$shape-size-spec}, ', '#{$shape-size-spec} ');
+
+  background-color:  $fallback-color;
+  background-image: -webkit-radial-gradient(unquote(#{$pos}#{$shape-size}#{$full}));
+  background-image: unquote("radial-gradient(#{$shape-size-spec}#{$pos-spec}#{$full})");
+}
+
+@mixin transform($property: none) {
+//  none | <transform-function>
+  @include prefixer(transform, $property, webkit moz ms o spec);
+}
+
+@mixin transform-origin($axes: 50%) {
+// x-axis - left | center | right  | length | %
+// y-axis - top  | center | bottom | length | %
+// z-axis -                          length
+  @include prefixer(transform-origin, $axes, webkit moz ms o spec);
+}
+
+@mixin transform-style ($style: flat) {
+  @include prefixer(transform-style, $style, webkit moz ms o spec);
+}
+
+// Shorthand mixin. Supports multiple parentheses-deliminated values for each variable.
+// Example: @include transition (all 2s ease-in-out);
+//          @include transition (opacity 1s ease-in 2s, width 2s ease-out);
+//          @include transition-property (transform, opacity);
+
+@mixin transition ($properties...) {
+  // Fix for vendor-prefix transform property
+  $needs-prefixes: false;
+  $webkit: ();
+  $moz: ();
+  $spec: ();
+
+  // Create lists for vendor-prefixed transform
+  @each $list in $properties {
+    @if nth($list, 1) == "transform" {
+      $needs-prefixes: true;
+      $list1: -webkit-transform;
+      $list2: -moz-transform;
+      $list3: ();
+
+      @each $var in $list {
+        $list3: join($list3, $var);
+
+        @if $var != "transform" {
+          $list1: join($list1, $var);
+          $list2: join($list2, $var);
+        }
+      }
+
+      $webkit: append($webkit, $list1);
+         $moz: append($moz,    $list2);
+        $spec: append($spec,   $list3);
+    }
+
+    // Create lists for non-prefixed transition properties
+    @else {
+      $webkit:  append($webkit, $list, comma);
+      $moz:     append($moz,    $list, comma);
+      $spec:    append($spec,   $list, comma);
+    }
+  }
+
+  @if $needs-prefixes {
+    -webkit-transition: $webkit;
+       -moz-transition: $moz;
+            transition: $spec;
+  }
+  @else {
+    @if length($properties) >= 1 {
+      @include prefixer(transition, $properties, webkit moz spec);
+    }
+
+    @else {
+      $properties: all 0.15s ease-out 0s;
+      @include prefixer(transition, $properties, webkit moz spec);
+    }
+  }
+}
+
+@mixin transition-property ($properties...) {
+   -webkit-transition-property: transition-property-names($properties, 'webkit');
+      -moz-transition-property: transition-property-names($properties, 'moz');
+           transition-property: transition-property-names($properties, false);
+}
+
+@mixin transition-duration ($times...) {
+  @include prefixer(transition-duration, $times, webkit moz spec);
+}
+
+@mixin transition-timing-function ($motions...) {
+// ease | linear | ease-in | ease-out | ease-in-out | cubic-bezier()
+  @include prefixer(transition-timing-function, $motions, webkit moz spec);
+}
+
+@mixin transition-delay ($times...) {
+  @include prefixer(transition-delay, $times, webkit moz spec);
+}
+
+@mixin user-select($arg: none) {
+  @include prefixer(user-select, $arg, webkit moz ms spec);
+}
+
+@mixin placeholder {
+  $placeholders: ":-webkit-input" ":-moz" "-moz" "-ms-input";
+  @each $placeholder in $placeholders {
+    &:#{$placeholder}-placeholder {
+      @content;
+    }
+  }
+}
+
+// Addons & other mixins
+@mixin button ($style: simple, $base-color: #4294f0, $text-size: inherit, $padding: 7px 18px) {
+
+  @if type-of($style) == string and type-of($base-color) == color {
+    @include buttonstyle($style, $base-color, $text-size, $padding);
+  }
+
+  @if type-of($style) == string and type-of($base-color) == number {
+    $padding: $text-size;
+    $text-size: $base-color;
+    $base-color: #4294f0;
+
+    @if $padding == inherit {
+      $padding: 7px 18px;
+    }
+
+    @include buttonstyle($style, $base-color, $text-size, $padding);
+  }
+
+  @if type-of($style) == color and type-of($base-color) == color {
+    $base-color: $style;
+    $style: simple;
+    @include buttonstyle($style, $base-color, $text-size, $padding);
+  }
+
+  @if type-of($style) == color and type-of($base-color) == number {
+    $padding: $text-size;
+    $text-size: $base-color;
+    $base-color: $style;
+    $style: simple;
+
+    @if $padding == inherit {
+      $padding: 7px 18px;
+    }
+
+    @include buttonstyle($style, $base-color, $text-size, $padding);
+  }
+
+  @if type-of($style) == number {
+    $padding: $base-color;
+    $text-size: $style;
+    $base-color: #4294f0;
+    $style: simple;
+
+    @if $padding == #4294f0 {
+      $padding: 7px 18px;
+    }
+
+    @include buttonstyle($style, $base-color, $text-size, $padding);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+
+// Selector Style Button
+//************************************************************************//
+@mixin buttonstyle($type, $b-color, $t-size, $pad) {
+  // Grayscale button
+  @if $type == simple and $b-color == grayscale($b-color) {
+    @include simple($b-color, true, $t-size, $pad);
+  }
+
+  @if $type == shiny and $b-color == grayscale($b-color) {
+    @include shiny($b-color, true, $t-size, $pad);
+  }
+
+  @if $type == pill and $b-color == grayscale($b-color) {
+    @include pill($b-color, true, $t-size, $pad);
+  }
+
+  @if $type == flat and $b-color == grayscale($b-color) {
+    @include flat($b-color, true, $t-size, $pad);
+  }
+
+  // Colored button
+  @if $type == simple {
+    @include simple($b-color, false, $t-size, $pad);
+  }
+
+  @else if $type == shiny {
+    @include shiny($b-color, false, $t-size, $pad);
+  }
+
+  @else if $type == pill {
+    @include pill($b-color, false, $t-size, $pad);
+  }
+
+  @else if $type == flat {
+    @include flat($b-color, false, $t-size, $pad);
+  }
+}
+
+
+// Simple Button
+//************************************************************************//
+@mixin simple($base-color, $grayscale: false, $textsize: inherit, $padding: 7px 18px) {
+  $color:         hsl(0, 0, 100%);
+  $border:        adjust-color($base-color, $saturation:  9%,  $lightness: -14%);
+  $inset-shadow:  adjust-color($base-color, $saturation: -8%,  $lightness:  15%);
+  $stop-gradient: adjust-color($base-color, $saturation:  9%,  $lightness: -11%);
+  $text-shadow:   adjust-color($base-color, $saturation:  15%, $lightness: -18%);
+
+  @if is-light($base-color) {
+    $color:       hsl(0, 0, 20%);
+    $text-shadow: adjust-color($base-color, $saturation: 10%, $lightness: 4%);
+  }
+
+  @if $grayscale == true {
+    $border:        grayscale($border);
+    $inset-shadow:  grayscale($inset-shadow);
+    $stop-gradient: grayscale($stop-gradient);
+    $text-shadow:   grayscale($text-shadow);
+  }
+
+  border: 1px solid $border;
+  border-radius: 3px;
+  box-shadow: inset 0 1px 0 0 $inset-shadow;
+  color: $color;
+  display: inline-block;
+  font-size: $textsize;
+  font-weight: bold;
+  @include linear-gradient ($base-color, $stop-gradient);
+  padding: $padding;
+  text-decoration: none;
+  text-shadow: 0 1px 0 $text-shadow;
+  background-clip: padding-box;
+
+  &:hover:not(:disabled) {
+    $base-color-hover:    adjust-color($base-color, $saturation: -4%, $lightness: -5%);
+    $inset-shadow-hover:  adjust-color($base-color, $saturation: -7%, $lightness:  5%);
+    $stop-gradient-hover: adjust-color($base-color, $saturation:  8%, $lightness: -14%);
+
+    @if $grayscale == true {
+      $base-color-hover:    grayscale($base-color-hover);
+      $inset-shadow-hover:  grayscale($inset-shadow-hover);
+      $stop-gradient-hover: grayscale($stop-gradient-hover);
+    }
+
+    box-shadow: inset 0 1px 0 0 $inset-shadow-hover;
+    cursor: pointer;
+    @include linear-gradient ($base-color-hover, $stop-gradient-hover);
+  }
+
+  &:active:not(:disabled),
+  &:focus:not(:disabled) {
+    $border-active:       adjust-color($base-color, $saturation: 9%, $lightness: -14%);
+    $inset-shadow-active: adjust-color($base-color, $saturation: 7%, $lightness: -17%);
+
+    @if $grayscale == true {
+      $border-active:       grayscale($border-active);
+      $inset-shadow-active: grayscale($inset-shadow-active);
+    }
+
+    border: 1px solid $border-active;
+    box-shadow: inset 0 0 8px 4px $inset-shadow-active, inset 0 0 8px 4px $inset-shadow-active;
+  }
+}
+
+
+// Shiny Button
+//************************************************************************//
+@mixin shiny($base-color, $grayscale: false, $textsize: inherit, $padding: 7px 18px) {
+  $color:         hsl(0, 0, 100%);
+  $border:        adjust-color($base-color, $red: -117, $green: -111, $blue: -81);
+  $border-bottom: adjust-color($base-color, $red: -126, $green: -127, $blue: -122);
+  $fourth-stop:   adjust-color($base-color, $red: -79,  $green: -70,  $blue: -46);
+  $inset-shadow:  adjust-color($base-color, $red:  37,  $green:  29,  $blue:  12);
+  $second-stop:   adjust-color($base-color, $red: -56,  $green: -50,  $blue: -33);
+  $text-shadow:   adjust-color($base-color, $red: -140, $green: -141, $blue: -114);
+  $third-stop:    adjust-color($base-color, $red: -86,  $green: -75,  $blue: -48);
+
+  @if is-light($base-color) {
+    $color:       hsl(0, 0, 20%);
+    $text-shadow: adjust-color($base-color, $saturation: 10%, $lightness: 4%);
+  }
+
+  @if $grayscale == true {
+    $border:        grayscale($border);
+    $border-bottom: grayscale($border-bottom);
+    $fourth-stop:   grayscale($fourth-stop);
+    $inset-shadow:  grayscale($inset-shadow);
+    $second-stop:   grayscale($second-stop);
+    $text-shadow:   grayscale($text-shadow);
+    $third-stop:    grayscale($third-stop);
+  }
+
+  border: 1px solid $border;
+  border-bottom: 1px solid $border-bottom;
+  border-radius: 5px;
+  box-shadow: inset 0 1px 0 0 $inset-shadow;
+  color: $color;
+  display: inline-block;
+  font-size: $textsize;
+  font-weight: bold;
+  @include linear-gradient(top, $base-color 0%, $second-stop 50%, $third-stop 50%, $fourth-stop 100%);
+  padding: $padding;
+  text-align: center;
+  text-decoration: none;
+  text-shadow: 0 -1px 1px $text-shadow;
+
+  &:hover:not(:disabled) {
+    $first-stop-hover:  adjust-color($base-color, $red: -13, $green: -15, $blue: -18);
+    $second-stop-hover: adjust-color($base-color, $red: -66, $green: -62, $blue: -51);
+    $third-stop-hover:  adjust-color($base-color, $red: -93, $green: -85, $blue: -66);
+    $fourth-stop-hover: adjust-color($base-color, $red: -86, $green: -80, $blue: -63);
+
+    @if $grayscale == true {
+      $first-stop-hover:  grayscale($first-stop-hover);
+      $second-stop-hover: grayscale($second-stop-hover);
+      $third-stop-hover:  grayscale($third-stop-hover);
+      $fourth-stop-hover: grayscale($fourth-stop-hover);
+    }
+
+    cursor: pointer;
+    @include linear-gradient(top, $first-stop-hover  0%,
+                                  $second-stop-hover 50%,
+                                  $third-stop-hover  50%,
+                                  $fourth-stop-hover 100%);
+  }
+
+  &:active:not(:disabled),
+  &:focus:not(:disabled) {
+    $inset-shadow-active: adjust-color($base-color, $red: -111, $green: -116, $blue: -122);
+
+    @if $grayscale == true {
+      $inset-shadow-active: grayscale($inset-shadow-active);
+    }
+
+    box-shadow: inset 0 0 20px 0 $inset-shadow-active;
+  }
+}
+
+
+// Pill Button
+//************************************************************************//
+@mixin pill($base-color, $grayscale: false, $textsize: inherit, $padding: 7px 18px) {
+  $color:         hsl(0, 0, 100%);
+  $border-bottom: adjust-color($base-color, $hue:  8, $saturation: -11%, $lightness: -26%);
+  $border-sides:  adjust-color($base-color, $hue:  4, $saturation: -21%, $lightness: -21%);
+  $border-top:    adjust-color($base-color, $hue: -1, $saturation: -30%, $lightness: -15%);
+  $inset-shadow:  adjust-color($base-color, $hue: -1, $saturation: -1%,  $lightness:  7%);
+  $stop-gradient: adjust-color($base-color, $hue:  8, $saturation:  14%, $lightness: -10%);
+  $text-shadow:   adjust-color($base-color, $hue:  5, $saturation: -19%, $lightness: -15%);
+
+  @if is-light($base-color) {
+    $color:       hsl(0, 0, 20%);
+    $text-shadow: adjust-color($base-color, $saturation: 10%, $lightness: 4%);
+  }
+
+  @if $grayscale == true {
+    $border-bottom: grayscale($border-bottom);
+    $border-sides:  grayscale($border-sides);
+    $border-top:    grayscale($border-top);
+    $inset-shadow:  grayscale($inset-shadow);
+    $stop-gradient: grayscale($stop-gradient);
+    $text-shadow:   grayscale($text-shadow);
+  }
+
+  border: 1px solid $border-top;
+  border-color: $border-top $border-sides $border-bottom;
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 0 $inset-shadow;
+  color: $color;
+  display: inline-block;
+  font-size: $textsize;
+  font-weight: normal;
+  line-height: 1;
+  @include linear-gradient ($base-color, $stop-gradient);
+  padding: $padding;
+  text-align: center;
+  text-decoration: none;
+  text-shadow: 0 -1px 1px $text-shadow;
+  background-clip: padding-box;
+
+  &:hover:not(:disabled) {
+    $base-color-hover:    adjust-color($base-color,                                $lightness: -4.5%);
+    $border-bottom:       adjust-color($base-color, $hue:  8, $saturation:  13.5%, $lightness: -32%);
+    $border-sides:        adjust-color($base-color, $hue:  4, $saturation: -2%,    $lightness: -27%);
+    $border-top:          adjust-color($base-color, $hue: -1, $saturation: -17%,   $lightness: -21%);
+    $inset-shadow-hover:  adjust-color($base-color,           $saturation: -1%,    $lightness:  3%);
+    $stop-gradient-hover: adjust-color($base-color, $hue:  8, $saturation: -4%,    $lightness: -15.5%);
+    $text-shadow-hover:   adjust-color($base-color, $hue:  5, $saturation: -5%,    $lightness: -22%);
+
+    @if $grayscale == true {
+      $base-color-hover:    grayscale($base-color-hover);
+      $border-bottom:       grayscale($border-bottom);
+      $border-sides:        grayscale($border-sides);
+      $border-top:          grayscale($border-top);
+      $inset-shadow-hover:  grayscale($inset-shadow-hover);
+      $stop-gradient-hover: grayscale($stop-gradient-hover);
+      $text-shadow-hover:   grayscale($text-shadow-hover);
+    }
+
+    border: 1px solid $border-top;
+    border-color: $border-top $border-sides $border-bottom;
+    box-shadow: inset 0 1px 0 0 $inset-shadow-hover;
+    cursor: pointer;
+    @include linear-gradient ($base-color-hover, $stop-gradient-hover);
+    text-shadow: 0 -1px 1px $text-shadow-hover;
+    background-clip: padding-box;
+  }
+
+  &:active:not(:disabled),
+  &:focus:not(:disabled) {
+    $active-color:         adjust-color($base-color, $hue: 4,  $saturation: -12%,  $lightness: -10%);
+    $border-active:        adjust-color($base-color, $hue: 6,  $saturation: -2.5%, $lightness: -30%);
+    $border-bottom-active: adjust-color($base-color, $hue: 11, $saturation:  6%,   $lightness: -31%);
+    $inset-shadow-active:  adjust-color($base-color, $hue: 9,  $saturation:  2%,   $lightness: -21.5%);
+    $text-shadow-active:   adjust-color($base-color, $hue: 5,  $saturation: -12%,  $lightness: -21.5%);
+
+    @if $grayscale == true {
+      $active-color:         grayscale($active-color);
+      $border-active:        grayscale($border-active);
+      $border-bottom-active: grayscale($border-bottom-active);
+      $inset-shadow-active:  grayscale($inset-shadow-active);
+      $text-shadow-active:   grayscale($text-shadow-active);
+    }
+
+    background: $active-color;
+    border: 1px solid $border-active;
+    border-bottom: 1px solid $border-bottom-active;
+    box-shadow: inset 0 0 6px 3px $inset-shadow-active;
+    text-shadow: 0 -1px 1px $text-shadow-active;
+  }
+}
+
+
+
+// Flat Button
+//************************************************************************//
+@mixin flat($base-color, $grayscale: false, $textsize: inherit, $padding: 7px 18px) {
+  $color:         hsl(0, 0, 100%);
+
+  @if is-light($base-color) {
+    $color:       hsl(0, 0, 20%);
+  }
+
+  background-color: $base-color;
+  border-radius: 3px;
+  border: none;
+  color: $color;
+  display: inline-block;
+  font-size: inherit;
+  font-weight: bold;
+  padding: 7px 18px;
+  text-decoration: none;
+  background-clip: padding-box;
+
+  &:hover:not(:disabled){
+    $base-color-hover:    adjust-color($base-color, $saturation: 4%, $lightness: 5%);
+
+    @if $grayscale == true {
+      $base-color-hover: grayscale($base-color-hover);
+    }
+
+    background-color: $base-color-hover;
+    cursor: pointer;
+  }
+
+  &:active:not(:disabled),
+  &:focus:not(:disabled) {
+    $base-color-active: adjust-color($base-color, $saturation: -4%, $lightness: -5%);
+
+    @if $grayscale == true {
+      $base-color-active: grayscale($base-color-active);
+    }
+
+    background-color: $base-color-active;
+    cursor: pointer;
+  }
+}
+
+// Modern micro clearfix provides an easy way to contain floats without adding additional markup.
+//
+// Example usage:
+//
+//    // Contain all floats within .wrapper
+//    .wrapper {
+//      @include clearfix;
+//      .content,
+//      .sidebar {
+//        float : left;
+//      }
+//    }
+
+@mixin clearfix {
+  &:after {
+    content:"";
+    display:table;
+    clear:both;
+  }
+}
+
+// Acknowledgements
+// Beat *that* clearfix: [Thierry Koblentz](http://www.css-101.org/articles/clearfix/latest-new-clearfix-so-far.php)
+
+// directional-property mixins are shorthands
+// for writing properties like the following
+//
+// @include margin(null 0 10px);
+// ------
+// margin-right: 0;
+// margin-bottom: 10px;
+// margin-left: 0;
+//
+// - or -
+//
+// @include border-style(dotted null);
+// ------
+// border-top-style: dotted;
+// border-bottom-style: dotted;
+//
+// ------
+//
+// Note: You can also use false instead of null
+
+@function collapse-directionals($vals) {
+  $output: null;
+
+  $A: nth( $vals, 1 );
+  $B: if( length($vals) < 2, $A, nth($vals, 2));
+  $C: if( length($vals) < 3, $A, nth($vals, 3));
+  $D: if( length($vals) < 2, $A, nth($vals, if( length($vals) < 4, 2, 4) ));
+
+  @if $A == 0 { $A: 0 }
+  @if $B == 0 { $B: 0 }
+  @if $C == 0 { $C: 0 }
+  @if $D == 0 { $D: 0 }
+
+  @if $A == $B and $A == $C and $A == $D { $output: $A          }
+  @else if $A == $C and $B == $D         { $output: $A $B       }
+  @else if $B == $D                      { $output: $A $B $C    }
+  @else                                  { $output: $A $B $C $D }
+
+  @return $output;
+}
+
+@function contains-falsy($list) {
+  @each $item in $list {
+    @if not $item {
+      @return true;
+    }
+  }
+
+  @return false;
+}
+
+@mixin directional-property($pre, $suf, $vals) {
+  // Property Names
+  $top:    $pre + "-top"    + if($suf, "-#{$suf}", "");
+  $bottom: $pre + "-bottom" + if($suf, "-#{$suf}", "");
+  $left:   $pre + "-left"   + if($suf, "-#{$suf}", "");
+  $right:  $pre + "-right"  + if($suf, "-#{$suf}", "");
+  $all:    $pre +             if($suf, "-#{$suf}", "");
+
+  $vals: collapse-directionals($vals);
+
+  @if contains-falsy($vals) {
+    @if nth($vals, 1) { #{$top}: nth($vals, 1); }
+
+    @if length($vals) == 1 {
+      @if nth($vals, 1) { #{$right}: nth($vals, 1); }
+    } @else {
+      @if nth($vals, 2) { #{$right}: nth($vals, 2); }
+    }
+
+    // prop: top/bottom right/left
+    @if length($vals) == 2 {
+      @if nth($vals, 1) { #{$bottom}: nth($vals, 1); }
+      @if nth($vals, 2) { #{$left}:   nth($vals, 2); }
+
+    // prop: top right/left bottom
+    } @else if length($vals) == 3 {
+      @if nth($vals, 3) { #{$bottom}: nth($vals, 3); }
+      @if nth($vals, 2) { #{$left}:   nth($vals, 2); }
+
+    // prop: top right bottom left
+    } @else if length($vals) == 4 {
+      @if nth($vals, 3) { #{$bottom}: nth($vals, 3); }
+      @if nth($vals, 4) { #{$left}:   nth($vals, 4); }
+    }
+
+  // prop: top/right/bottom/left
+  } @else {
+    #{$all}: $vals;
+  }
+}
+
+@mixin margin($vals...) {
+  @include directional-property(margin, false, $vals...);
+}
+
+@mixin padding($vals...) {
+  @include directional-property(padding, false, $vals...);
+}
+
+@mixin border-style($vals...) {
+  @include directional-property(border, style, $vals...);
+}
+
+@mixin border-color($vals...) {
+  @include directional-property(border, color, $vals...);
+}
+
+@mixin border-width($vals...) {
+  @include directional-property(border, width, $vals...);
+}
+
+@mixin ellipsis($width: 100%) {
+  display: inline-block;
+  max-width: $width;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+$georgia: Georgia, Cambria, "Times New Roman", Times, serif;
+$helvetica: "Helvetica Neue", Helvetica, Roboto, Arial, sans-serif;
+$lucida-grande: "Lucida Grande", Tahoma, Verdana, Arial, sans-serif;
+$monospace: "Bitstream Vera Sans Mono", Consolas, Courier, monospace;
+$verdana: Verdana, Geneva, sans-serif;
+
+@mixin hide-text {
+  overflow: hidden;
+
+  &:before {
+    content: "";
+    display: block;
+    width: 0;
+    height: 100%;
+  }
+}
+
+//************************************************************************//
+// Generate a variable ($all-text-inputs) with a list of all html5
+// input types that have a text-based input, excluding textarea.
+// http://diveintohtml5.org/forms.html
+//************************************************************************//
+$inputs-list: 'input[type="email"]',
+              'input[type="number"]',
+              'input[type="password"]',
+              'input[type="search"]',
+              'input[type="tel"]',
+              'input[type="text"]',
+              'input[type="url"]',
+
+              // Webkit & Gecko may change the display of these in the future
+              'input[type="color"]',
+              'input[type="date"]',
+              'input[type="datetime"]',
+              'input[type="datetime-local"]',
+              'input[type="month"]',
+              'input[type="time"]',
+              'input[type="week"]';
+
+$unquoted-inputs-list: ();
+@each $input-type in $inputs-list {
+  $unquoted-inputs-list: append($unquoted-inputs-list, unquote($input-type), comma);
+}
+
+$all-text-inputs: $unquoted-inputs-list;
+
+
+// Hover Pseudo-class
+//************************************************************************//
+$all-text-inputs-hover: ();
+@each $input-type in $unquoted-inputs-list {
+      $input-type-hover: $input-type + ":hover";
+      $all-text-inputs-hover: append($all-text-inputs-hover, $input-type-hover, comma);
+}
+
+// Focus Pseudo-class
+//************************************************************************//
+$all-text-inputs-focus: ();
+@each $input-type in $unquoted-inputs-list {
+      $input-type-focus: $input-type + ":focus";
+      $all-text-inputs-focus: append($all-text-inputs-focus, $input-type-focus, comma);
+}
+
+// You must use interpolation on the variable:
+// #{$all-text-inputs}
+// #{$all-text-inputs-hover}
+// #{$all-text-inputs-focus}
+
+// Example
+//************************************************************************//
+//   #{$all-text-inputs}, textarea {
+//     border: 1px solid red;
+//   }
+
+
+
+//************************************************************************//
+// Generate a variable ($all-button-inputs) with a list of all html5
+// input types that have a button-based input, excluding button.
+//************************************************************************//
+$inputs-button-list: 'input[type="button"]',
+                     'input[type="reset"]',
+                     'input[type="submit"]';
+
+$unquoted-inputs-button-list: ();
+@each $input-type in $inputs-button-list {
+  $unquoted-inputs-button-list: append($unquoted-inputs-button-list, unquote($input-type), comma);
+}
+
+$all-button-inputs: $unquoted-inputs-button-list;
+
+
+// Hover Pseudo-class
+//************************************************************************//
+$all-button-inputs-hover: ();
+@each $input-type in $unquoted-inputs-button-list {
+      $input-type-hover: $input-type + ":hover";
+      $all-button-inputs-hover: append($all-button-inputs-hover, $input-type-hover, comma);
+}
+
+// Focus Pseudo-class
+//************************************************************************//
+$all-button-inputs-focus: ();
+@each $input-type in $unquoted-inputs-button-list {
+      $input-type-focus: $input-type + ":focus";
+      $all-button-inputs-focus: append($all-button-inputs-focus, $input-type-focus, comma);
+}
+
+// Active Pseudo-class
+//************************************************************************//
+$all-button-inputs-active: ();
+@each $input-type in $unquoted-inputs-button-list {
+      $input-type-active: $input-type + ":active";
+      $all-button-inputs-active: append($all-button-inputs-active, $input-type-active, comma);
+}
+
+// You must use interpolation on the variable:
+// #{$all-button-inputs}
+// #{$all-button-inputs-hover}
+// #{$all-button-inputs-focus}
+// #{$all-button-inputs-active}
+
+// Example
+//************************************************************************//
+//   #{$all-button-inputs}, button {
+//     border: 1px solid red;
+//   }
+
+@mixin position ($position: relative, $coordinates: 0 0 0 0) {
+
+  @if type-of($position) == list {
+    $coordinates: $position;
+    $position: relative;
+  }
+
+  $coordinates: unpack($coordinates);
+
+  $top: nth($coordinates, 1);
+  $right: nth($coordinates, 2);
+  $bottom: nth($coordinates, 3);
+  $left: nth($coordinates, 4);
+
+  position: $position;
+
+  @if ($top and $top == auto) or (type-of($top) == number and not(unitless($top))) {
+    top: $top;
+  }
+
+  @if ($right and $right == auto) or (type-of($right) == number and not(unitless($right))) {
+    right: $right;
+  }
+
+  @if ($bottom and $bottom == auto) or (type-of($bottom) == number and not(unitless($bottom))) {
+    bottom: $bottom;
+  }
+
+  @if ($left and $left == auto) or (type-of($left) == number and not(unitless($left))) {
+    left: $left;
+  }
+}
+
+//************************************************************************//
+// Example: @include prefixer(border-radius, $radii, webkit ms spec);
+//************************************************************************//
+// Variables located in /settings/_prefixer.scss
+
+@mixin prefixer ($property, $value, $prefixes) {
+  @each $prefix in $prefixes {
+    @if $prefix == webkit {
+      @if $prefix-for-webkit {
+        -webkit-#{$property}: $value;
+      }
+    }
+    @else if $prefix == moz {
+      @if $prefix-for-mozilla {
+        -moz-#{$property}: $value;
+      }
+    }
+    @else if $prefix == ms {
+      @if $prefix-for-microsoft {
+        -ms-#{$property}: $value;
+      }
+    }
+    @else if $prefix == o {
+      @if $prefix-for-opera {
+        -o-#{$property}: $value;
+      }
+    }
+    @else if $prefix == spec {
+      @if $prefix-for-spec {
+        #{$property}: $value;
+      }
+    }
+    @else  {
+      @warn "Unrecognized prefix: #{$prefix}";
+    }
+  }
+}
+
+@mixin disable-prefix-for-all() {
+  $prefix-for-webkit:    false;
+  $prefix-for-mozilla:   false;
+  $prefix-for-microsoft: false;
+  $prefix-for-opera:     false;
+  $prefix-for-spec:      false;
+}
+
+@mixin retina-image($filename, $background-size, $extension: png, $retina-filename: null, $retina-suffix: _2x, $asset-pipeline: $asset-pipeline) {
+  @if $asset-pipeline {
+    background-image: image-url("#{$filename}.#{$extension}");
+  }
+  @else {
+    background-image:       url("#{$filename}.#{$extension}");
+  }
+
+  @include hidpi {
+    @if $asset-pipeline {
+      @if $retina-filename {
+        background-image: image-url("#{$retina-filename}.#{$extension}");
+      }
+      @else {
+        background-image: image-url("#{$filename}#{$retina-suffix}.#{$extension}");
+      }
+    }
+
+    @else {
+      @if $retina-filename {
+        background-image: url("#{$retina-filename}.#{$extension}");
+      }
+      @else {
+        background-image: url("#{$filename}#{$retina-suffix}.#{$extension}");
+      }
+    }
+
+    background-size: $background-size;
+
+  }
+}
+
+@mixin size($size) {
+  @if length($size) == 1 {
+    @if $size == auto {
+      width:  $size;
+      height: $size;
+    }
+
+    @else if unitless($size) {
+      width:  $size + px;
+      height: $size + px;
+    }
+
+    @else if not(unitless($size)) {
+      width:  $size;
+      height: $size;
+    }
+  }
+
+  // Width x Height
+  @if length($size) == 2 {
+    $width:  nth($size, 1);
+    $height: nth($size, 2);
+
+    @if $width == auto {
+      width: $width;
+    }
+    @else if not(unitless($width)) {
+      width: $width;
+    }
+    @else if unitless($width) {
+      width: $width + px;
+    }
+
+    @if $height == auto {
+      height: $height;
+    }
+    @else if not(unitless($height)) {
+      height: $height;
+    }
+    @else if unitless($height) {
+      height: $height + px;
+    }
+  }
+}
+
+// CSS cubic-bezier timing functions. Timing functions courtesy of jquery.easie (github.com/jaukia/easie)
+// Timing functions are the same as demo'ed here: http://jqueryui.com/resources/demos/effect/easing.html
+
+// EASE IN
+$ease-in-quad:      cubic-bezier(0.550,  0.085, 0.680, 0.530);
+$ease-in-cubic:     cubic-bezier(0.550,  0.055, 0.675, 0.190);
+$ease-in-quart:     cubic-bezier(0.895,  0.030, 0.685, 0.220);
+$ease-in-quint:     cubic-bezier(0.755,  0.050, 0.855, 0.060);
+$ease-in-sine:      cubic-bezier(0.470,  0.000, 0.745, 0.715);
+$ease-in-expo:      cubic-bezier(0.950,  0.050, 0.795, 0.035);
+$ease-in-circ:      cubic-bezier(0.600,  0.040, 0.980, 0.335);
+$ease-in-back:      cubic-bezier(0.600, -0.280, 0.735, 0.045);
+
+// EASE OUT
+$ease-out-quad:     cubic-bezier(0.250,  0.460, 0.450, 0.940);
+$ease-out-cubic:    cubic-bezier(0.215,  0.610, 0.355, 1.000);
+$ease-out-quart:    cubic-bezier(0.165,  0.840, 0.440, 1.000);
+$ease-out-quint:    cubic-bezier(0.230,  1.000, 0.320, 1.000);
+$ease-out-sine:     cubic-bezier(0.390,  0.575, 0.565, 1.000);
+$ease-out-expo:     cubic-bezier(0.190,  1.000, 0.220, 1.000);
+$ease-out-circ:     cubic-bezier(0.075,  0.820, 0.165, 1.000);
+$ease-out-back:     cubic-bezier(0.175,  0.885, 0.320, 1.275);
+
+// EASE IN OUT
+$ease-in-out-quad:  cubic-bezier(0.455,  0.030, 0.515, 0.955);
+$ease-in-out-cubic: cubic-bezier(0.645,  0.045, 0.355, 1.000);
+$ease-in-out-quart: cubic-bezier(0.770,  0.000, 0.175, 1.000);
+$ease-in-out-quint: cubic-bezier(0.860,  0.000, 0.070, 1.000);
+$ease-in-out-sine:  cubic-bezier(0.445,  0.050, 0.550, 0.950);
+$ease-in-out-expo:  cubic-bezier(1.000,  0.000, 0.000, 1.000);
+$ease-in-out-circ:  cubic-bezier(0.785,  0.135, 0.150, 0.860);
+$ease-in-out-back:  cubic-bezier(0.680, -0.550, 0.265, 1.550);
+
+@mixin triangle ($size, $color, $direction) {
+  height: 0;
+  width: 0;
+
+  $width: nth($size, 1);
+  $height: nth($size, length($size));
+
+  $foreground-color: nth($color, 1);
+  $background-color: transparent !default;
+  @if (length($color) == 2) {
+    $background-color: nth($color, 2);
+  }
+
+  @if ($direction == up) or ($direction == down) or ($direction == right) or ($direction == left) {
+
+    $width: $width / 2;
+    $height: if(length($size) > 1, $height, $height/2);
+
+    @if $direction == up {
+      border-left: $width solid $background-color;
+      border-right: $width solid $background-color;
+      border-bottom: $height solid $foreground-color;
+
+    } @else if $direction == right {
+      border-top: $width solid $background-color;
+      border-bottom: $width solid $background-color;
+      border-left: $height solid $foreground-color;
+
+    } @else if $direction == down {
+      border-left: $width solid $background-color;
+      border-right: $width solid $background-color;
+      border-top: $height solid $foreground-color;
+
+    } @else if $direction == left {
+      border-top: $width solid $background-color;
+      border-bottom: $width solid $background-color;
+      border-right: $height solid $foreground-color;
+    }
+  }
+
+  @else if ($direction == up-right) or ($direction == up-left) {
+    border-top: $height solid $foreground-color;
+
+    @if $direction == up-right {
+      border-left:  $width solid $background-color;
+
+    } @else if $direction == up-left {
+      border-right: $width solid $background-color;
+    }
+  }
+
+  @else if ($direction == down-right) or ($direction == down-left) {
+    border-bottom: $height solid $foreground-color;
+
+    @if $direction == down-right {
+      border-left:  $width solid $background-color;
+
+    } @else if $direction == down-left {
+      border-right: $width solid $background-color;
+    }
+  }
+
+  @else if ($direction == inset-up) {
+    border-width: $height $width;
+    border-style: solid;
+    border-color: $background-color $background-color $foreground-color;
+  }
+
+  @else if ($direction == inset-down) {
+    border-width: $height $width;
+    border-style: solid;
+    border-color: $foreground-color $background-color $background-color;
+  }
+
+  @else if ($direction == inset-right) {
+    border-width: $width $height;
+    border-style: solid;
+    border-color: $background-color $background-color $background-color $foreground-color;
+  }
+
+  @else if ($direction == inset-left) {
+    border-width: $width $height;
+    border-style: solid;
+    border-color: $background-color $foreground-color $background-color $background-color;
+  }
+}
+
+@mixin word-wrap($wrap: break-word) {
+  word-wrap: $wrap;
+
+  @if $wrap == break-word {
+    overflow-wrap: break-word;
+    word-break: break-all;
+  }
+}
+
+// Soon to be deprecated Mixins
+//************************************************************************//
+// These mixins/functions are deprecated
+// They will be removed in the next MAJOR version release
+//************************************************************************//
+@mixin box-shadow ($shadows...) {
+  @include prefixer(box-shadow, $shadows, spec);
+  @warn "box-shadow is deprecated and will be removed in the next major version release";
+}
+
+@mixin background-size ($lengths...) {
+  @include prefixer(background-size, $lengths, spec);
+  @warn "background-size is deprecated and will be removed in the next major version release";
+}
+
+/* settings */
+$siteWidth: 1030px;
+$gutter: 30px;
+$gridGutter: 30px;
+$radius: 3px;
+
+$small: 480px;
+$medium: 768px;
+$large: 769px;
+
+$viewportIncrement: 1px;
+$postSmall: $small + $viewportIncrement;
+$preMedium: $medium - $viewportIncrement;
+$preLarge: $large - $viewportIncrement;
+
+/*================ The following are dependencies of csswizardry grid ================*/
+$breakpoints: (
+  'small' '(max-width: #{$small})',
+  'medium' '(min-width: #{$postSmall}) and (max-width: #{$medium})',
+  'medium-down' '(max-width: #{$medium})',
+  'large' '(min-width: #{$large})'
+);
+$breakpoint-has-widths: ('small', 'medium', 'medium-down', 'large');
+$breakpoint-has-push:  ('medium', 'medium-down', 'large');
+$breakpoint-has-pull:  ('medium', 'medium-down', 'large');
+/*================ Color variables ================*/
+$colorPrimary: {{ settings.color_primary }};
+$colorSecondary: {{ settings.color_secondary }};
+
+// Button colors
+$colorBtnPrimary: $colorPrimary;
+$colorBtnPrimaryHover: lighten($colorBtnPrimary, 10%);
+$colorBtnPrimaryActive: darken($colorBtnPrimaryHover, 10%);
+$colorBtnPrimaryText: {{ settings.color_button_primary_text }};
+
+$colorBtnSecondary: $colorSecondary;
+$colorBtnSecondaryHover: lighten($colorBtnSecondary, 10%);
+$colorBtnSecondaryActive: darken($colorBtnSecondaryHover, 10%);
+$colorBtnSecondaryText: {{ settings.color_button_secondary_text }};
+
+$colorBtnTertiary: {{ settings.color_body_bg }};
+$colorBtnTertiaryHover: $colorPrimary;
+$colorBtnTertiaryActive: darken($colorPrimary, 10%);
+$colorBtnTertiaryText: $colorPrimary;
+
+// Text link colors
+$colorLink: $colorPrimary;
+$colorLinkHover: lighten($colorPrimary, 15%);
+
+// Text colors
+$colorTextBody: {{ settings.color_body_text }};
+$colorTopBarText: {{ settings.color_topbar_text }};
+
+// Backgrounds
+$colorBody: {{ settings.color_body_bg }};
+$colorHeader: {{ settings.color_header_bg }};
+$colorTopBar: {{ settings.color_topbar_bg }};
+
+// Border colors
+$colorBorder: {{ settings.color_borders }};
+
+// Nav and dropdown link background
+$colorNavText: {{ settings.color_header_text }};
+
+// Site Footer
+$colorFooterBg: {{ settings.color_header_bg }};
+$colorFooterText: {{ settings.color_footer_text }};
+
+// Helper colors
+$disabledGrey: #f6f6f6;
+$disabledBorder: darken($disabledGrey, 25%);
+$errorRed: #d02e2e;
+$errorRedBg: #fff6f6;
+$successGreen: #56ad6a;
+$successGreenBg: #ecfef0;
+
+// Product review app
+$colorReviewStars: {{ settings.product_reviews_star_color }};
+/*============================================================================
+  Dependency-free breakpoint mixin
+    - http://blog.grayghostvisuals.com/sass/sass-media-query-mixin/
+==============================================================================*/
+$min: min-width;
+$max: max-width;
+@mixin at-query ($constraint, $viewport1, $viewport2:null) {
+  @if $constraint == $min {
+    @media screen and ($min: $viewport1) {
+      @content;
+    }
+  } @else if $constraint == $max {
+    @media screen and ($max: $viewport1) {
+      @content;
+    }
+  } @else {
+    @media screen and ($min: $viewport1) and ($max: $viewport2) {
+      @content;
+    }
+  }
+}
+/*================ Typography variables ================*/
+{% if settings.type_base_family contains 'Google' %}
+  {% assign type_base_parts = settings.type_base_family | split: '_' %}
+  {% assign type_base_name = type_base_parts[1] %}
+  {% capture base_family %}"{{ type_base_name | split: ':' | first | replace: '+', ' ' }}"{% if type_base_parts.last == 'serif' %}, serif {% else %}, "HelveticaNeue", "Helvetica Neue", sans-serif{% endif %}{% endcapture %}
+{% else %}
+  {% assign base_family = settings.type_base_family %}
+{% endif %}
+
+{% if settings.type_header_family contains 'Google' %}
+  {% assign type_header_parts = settings.type_header_family | split: '_' %}
+  {% assign type_header_name = type_header_parts[1] %}
+  {% capture header_family %}"{{ type_header_name | split: ':' | first | replace: '+', ' ' }}"{% if type_header_parts.last == 'serif' %}, serif {% else %}, "HelveticaNeue", "Helvetica Neue", sans-serif{% endif %}{% endcapture %}
+  {% assign header_weight = type_header_parts[2] %}
+{% else %}
+  {% assign header_family = settings.type_header_family %}
+  {% assign header_weight = 700 %}
+{% endif %}
+
+// Body Font
+$bodyFontStack: {{ base_family }};
+$baseFontSize: {{ settings.type_base_size }};
+
+// Header Font
+$headerFontStack: {{ header_family }};
+$headerFontWeight: {{ header_weight }};
+/*================ Color variables ================*/
+$colorPrimary: {{ settings.color_primary }};
+$colorSecondary: {{ settings.color_secondary }};
+
+// Button colors
+$colorBtnPrimary: $colorPrimary;
+$colorBtnPrimaryHover: lighten($colorBtnPrimary, 10%);
+$colorBtnPrimaryActive: darken($colorBtnPrimaryHover, 10%);
+$colorBtnPrimaryText: {{ settings.color_button_primary_text }};
+
+$colorBtnSecondary: $colorSecondary;
+$colorBtnSecondaryHover: lighten($colorBtnSecondary, 10%);
+$colorBtnSecondaryActive: darken($colorBtnSecondaryHover, 10%);
+$colorBtnSecondaryText: {{ settings.color_button_secondary_text }};
+
+$colorBtnTertiary: {{ settings.color_body_bg }};
+$colorBtnTertiaryHover: $colorPrimary;
+$colorBtnTertiaryActive: darken($colorPrimary, 10%);
+$colorBtnTertiaryText: $colorPrimary;
+
+// Text link colors
+$colorLink: $colorPrimary;
+$colorLinkHover: lighten($colorPrimary, 15%);
+
+// Text colors
+$colorTextBody: {{ settings.color_body_text }};
+$colorTopBarText: {{ settings.color_topbar_text }};
+
+// Backgrounds
+$colorBody: {{ settings.color_body_bg }};
+$colorHeader: {{ settings.color_header_bg }};
+$colorTopBar: {{ settings.color_topbar_bg }};
+
+// Border colors
+$colorBorder: {{ settings.color_borders }};
+
+// Nav and dropdown link background
+$colorNavText: {{ settings.color_header_text }};
+
+// Site Footer
+$colorFooterBg: {{ settings.color_header_bg }};
+$colorFooterText: {{ settings.color_footer_text }};
+
+// Helper colors
+$disabledGrey: #f6f6f6;
+$disabledBorder: darken($disabledGrey, 25%);
+$errorRed: #d02e2e;
+$errorRedBg: #fff6f6;
+$successGreen: #56ad6a;
+$successGreenBg: #ecfef0;
+
+// Product review app
+$colorReviewStars: {{ settings.product_reviews_star_color }};
+
+/* global */
+/*================ Variables, theme settings, and Sass mixins ================*/
+/*================ Global | Sass Mixins ================*/
+@mixin clearfix() {
+  &:after {
+    content: "";
+    display: table;
+    clear: both; }
+  *zoom: 1;
+}
+
+@mixin prefix($property, $value) {
+  -webkit-#{$property}: #{$value};
+  -moz-#{$property}: #{$value};
+  -ms-#{$property}: #{$value};
+  -o-#{$property}: #{$value};
+  #{$property}: #{$value};
+}
+
+@mixin transition($transition: 0.1s all) {
+  @include prefix('transition', #{$transition});
+}
+
+@mixin gradient($from, $to, $fallback) {
+  background: $fallback;
+  background: -moz-linear-gradient(top, $from 0%, $to 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,$from), color-stop(100%,$to));
+  background: -webkit-linear-gradient(top, $from 0%, $to 100%);
+  background: -o-linear-gradient(top, $from 0%, $to 100%);
+  background: -ms-linear-gradient(top, $from 0%, $to 100%);
+  background: linear-gradient(top bottom, $from 0%, $to 100%);
+}
+
+@mixin backface($visibility: hidden) {
+  @include prefix('backface-visibility', #{$visibility});
+}
+
+@mixin box-sizing($box-sizing: border-box) {
+  -webkit-box-sizing: #{$box-sizing};
+  -moz-box-sizing: #{$box-sizing};
+  box-sizing: #{$box-sizing};
+}
+
+@function em($target, $context: $baseFontSize) {
+  @if $target == 0 {
+    @return 0;
+  }
+  @return $target / $context + 0em;
+}
+
+@function color-control($color) {
+  @if (lightness( $color ) > 50) {
+    @return #000;
+  }
+  @else {
+    @return #fff;
+  }
+}
+/*================ Global | Normalize ================*/
+*, input, :before, :after {
+  @include box-sizing();
+}
+
+html, body {
+  padding: 0;
+  margin: 0;
+}
+
+article, aside, details, figcaption, figure, footer, header, hgroup, main, nav, section, summary {
+  display: block;
+}
+
+audio, canvas, progress, video {
+  display: inline-block;
+  vertical-align: baseline;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  height: auto;
+}
+
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+/*============================================================================
+  #OOCSS Media Object
+    - http://www.stubbornella.org/content/2010/06/25/the-media-object-saves-hundreds-of-lines-of-code/
+==============================================================================*/
+.media,
+.media-flex {
+  overflow: hidden;
+  _overflow: visible;
+  zoom: 1;
+}
+
+.media-img {
+  float: left;
+  margin-right: $gutter;
+}
+
+.media-img-right {
+  float: right;
+  margin-left: $gutter;
+}
+
+.media-img img,
+.media-img-right img {
+  display: block;
+}
+/* partials */
+/*================ Partials | Forms ================*/
+form {
+  margin-bottom: $gutter;
+}
+
+input,
+textarea,
+button,
+select {
+  font-size: 1em;
+}
+
+button,
+input[type="text"],
+input[type="search"],
+input[type="password"],
+input[type="email"],
+input[type="file"],
+input[type="number"],
+input[type="tel"],
+input[type="submit"],
+textarea {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+input,
+textarea,
+select,
+fieldset {
+  border-radius: $radius;
+  max-width: 100%;
+
+  &.input-full {
+    width: 100%;
+  }
+}
+
+input,
+select,
+textarea {
+  padding: 8px 10px;
+  line-height: 1.42;
+}
+
+fieldset {
+  border: 1px solid $colorBorder;
+  padding: $gutter / 2;
+}
+
+legend {
+  border: 0;
+  padding: 0;
+}
+
+optgroup {
+  font-weight: bold;
+}
+
+input {
+  display: inline-block;
+  width: auto;
+}
+
+button,
+input[type="submit"] {
+  cursor: pointer;
+}
+
+input[type="submit"] {
+  @extend .btn;
+}
+
+/*================ Input width and border ================*/
+input[type="text"],
+input[type="search"],
+input[type="password"],
+input[type="email"],
+input[type="file"],
+input[type="number"],
+input[type="tel"],
+textarea,
+select {
+  border: 1px solid $colorBorder;
+  width: 100%;
+  max-width: 100%;
+  display: block;
+  margin: 0 0 1em;
+  color: #333;
+
+  &:focus {
+    border: 1px solid darken($colorBorder, 10%);
+  }
+
+  &[disabled],
+  &.disabled {
+    cursor: default;
+    background-color: $disabledGrey;
+    border-color: $disabledBorder;
+  }
+}
+
+textarea {
+  min-height: 100px;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+select {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  background-position: right center;
+  background: {
+    image: url('{{ "ico-select.svg" | asset_url }}');
+    repeat: no-repeat;
+    position: right 10px center;
+    color: #fff;
+  }
+  padding-right: 28px;
+  text-indent: 0.01px;
+  text-overflow: '';
+  cursor: pointer;
+
+  /*================ Hide the svg arrow in IE9 and below ================*/
+  .ie9 &,
+  .lt-ie9 & {
+    padding-right: 10px;
+    background-image: none;
+  }
+}
+
+// Force option color (affects IE only)
+option {
+  color: #000;
+  background-color: #fff;
+}
+
+select::-ms-expand {
+  display: none;
+}
+
+/*================ Form labels ================*/
+label,
+legend {
+  display: block;
+  margin-bottom: 2px;
+  font-weight: bold;
+
+  &.inline {
+    display: inline;
+  }
+
+  .form-horizontal &.label--hidden,
+  &.label--hidden {
+    height: 0;
+    width: 0;
+    margin-bottom: 0;
+    overflow: hidden;
+
+    .ie9 &,
+    .lt-ie9 & {
+      height: auto;
+      width: auto;
+      margin-bottom: 2px;
+      overflow: visible;
+    }
+  }
+}
+
+/*================ We don't want the same label treatment for checkboxes/radios ================*/
+input[type="checkbox"] + label,
+input[type="radio"] + label {
+  font-weight: normal;
+}
+
+label[for] {
+  cursor: pointer;
+}
+
+.label-hint {
+  color: #999;
+}
+
+/*================ Horizontal Form ================*/
+form.form-horizontal,
+.form-horizontal {
+  margin-bottom: 0;
+
+  input[type="text"],
+  input[type="search"],
+  input[type="password"],
+  input[type="email"],
+  input[type="file"],
+  input[type="number"],
+  input[type="tel"],
+  textarea,
+  select,
+  label {
+    display: inline-block;
+    margin-bottom: 0;
+    width: auto;
+  }
+}
+
+/*================ Error styles ================*/
+input[type="text"],
+input[type="search"],
+input[type="password"],
+input[type="email"],
+input[type="file"],
+input[type="number"],
+input[type="tel"],
+textarea {
+  &.error {
+    border-color: $errorRed;
+    background-color: $errorRedBg;
+    color: $errorRed;
+  }
+}
+
+label.error {
+  color: $errorRed;
+}
+
+
+/*================ Input Group ================*/
+.input-group {
+  position: relative;
+  display: table;
+  border-collapse: separate;
+
+  .input-group-field:first-child,
+  .input-group-btn:first-child,
+  .input-group-btn:first-child > .btn,
+  input[type="hidden"]:first-child + .input-group-field,
+  input[type="hidden"]:first-child + .input-group-btn > .btn {
+    border-radius: $radius 0 0 $radius;
+  }
+
+  .input-group-field:last-child,
+  .input-group-btn:last-child > .btn {
+   border-radius: 0 $radius $radius 0;
+  }
+
+  input {
+    // Nasty Firefox hack for inputs http://davidwalsh.name/firefox-buttons
+    &::-moz-focus-inner {
+      border: 0;
+      padding: 0;
+      margin-top: -1px;
+      margin-bottom: -1px;
+    }
+  }
+}
+
+.input-group-field,
+.input-group-btn {
+  display: table-cell;
+  vertical-align: middle;
+  margin: 0;
+}
+
+.input-group .btn,
+.input-group .input-group-field {
+  height: 37px;
+}
+
+.input-group .input-group-field {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.input-group-btn {
+  position: relative;
+  white-space: nowrap;
+  width: 1%;
+  padding: 0;
+}
+
+/*================ Search bar ================*/
+.search-bar {
+  max-width: 50%;
+
+  @include at-query ($max, $medium) {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 100%;
+  }
+}
+/*================ Partials | Helper Classes ================*/
+.clearfix {
+  &:after {
+    content: "";
+    display: table;
+    clear: both; }
+  *zoom: 1;
+}
+
+.display-table {
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.display-table-cell {
+  display: table-cell;
+  vertical-align: middle;
+  float: none;
+}
+
+@include at-query ($min, $large) {
+  .large--display-table {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  .large--display-table-cell {
+    display: table-cell;
+    vertical-align: middle;
+    float: none;
+  }
+}
+/*================ Partials | Icons ================*/
+@font-face {
+  font-family: 'icons';
+  src: url('{{ "icons.eot" | asset_url }}');
+  src: url('{{ "icons.eot" | asset_url }}#iefix') format("embedded-opentype"),
+       url('{{ "icons.woff" | asset_url }}') format("woff"),
+       url('{{ "icons.ttf" | asset_url }}') format("truetype"),
+       url('{{ "icons.svg" | asset_url }}#timber-icons') format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+$socialIconFontStack: 'icons';
+
+.icon-fallback-text .icon {
+  display: none;
+
+  .supports-fontface & {
+    display: inline-block;
+  }
+}
+
+/*============================================================================
+  A generic way to visually hide content while
+  remaining accessible to screen readers (h5bp.com)
+==============================================================================*/
+.supports-fontface .icon-fallback-text .fallback-text {
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+  position: absolute;
+  height: 1px;
+  width: 1px;
+}
+
+.icon:before {
+  display: none;
+}
+
+.supports-fontface .icon:before {
+  display: inline;
+  font-family: $socialIconFontStack;
+  text-decoration: none;
+  speak: none; // future fallback, limited in effect currently
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/*================ Icon mapping ================*/
+.icon-american_express:before { content: "\41"; }
+.icon-arrow-down:before { content: "\34"; }
+.icon-bitcoin:before { content: "\42"; }
+.icon-cart:before { content: "\5b"; }
+.icon-cirrus:before { content: "\43"; }
+.icon-diners_club:before { content: "\63"; }
+.icon-discover:before { content: "\44"; }
+.icon-dankort:before { content: "\64"; }
+.icon-facebook:before { content: "\66"; }
+.icon-fancy:before { content: "\46"; }
+.icon-google:before { content: "\67"; }
+.icon-google_wallet:before { content: "\47"; }
+.icon-grid-view:before { content: "\e603"; }
+.icon-hamburger:before { content: "\e600"; }
+.icon-instagram:before { content: "\69"; }
+.icon-interac:before { content: "\49"; }
+.icon-jcb:before { content: "\4a"; }
+.icon-list-view:before { content: "\e604"; }
+.icon-maestro:before { content: "\6d"; }
+.icon-master:before { content: "\4d"; }
+.icon-minus:before { content: "\e602"; }
+.icon-paypal:before { content: "\50"; }
+.icon-pinterest:before { content: "\70"; }
+.icon-plus:before { content: "\e605"; }
+.icon-rss:before { content: "\72"; }
+.icon-search:before { content: "\73"; }
+.icon-stripe:before { content: "\53"; }
+.icon-tumblr:before { content: "\74"; }
+.icon-twitter:before { content: "\54"; }
+.icon-vimeo:before { content: "\76"; }
+.icon-visa:before { content: "\56"; }
+.icon-x:before { content: "\78"; }
+.icon-youtube:before { content: "\79"; }
+
+.payment-icons {
+  @include prefix('user-select', 'none');
+  cursor: default;
+
+  li {
+    margin: 0 ($gutter / 4) ($gutter / 4);
+    color: {{ settings.color_footer_social_link }};
+    cursor: default;
+  }
+
+  .icon {
+    font-size: 30px;
+    line-height: 30px;
+  }
+
+  .fallback-text {
+    text-transform: capitalize;
+  }
+}
+
+.social-icons li {
+  margin: 0 ($gutter / 3) ($gutter / 2);
+  vertical-align: middle;
+
+  @include at-query ($min, $postSmall) {
+    margin-left: 0;
+  }
+
+  .icon {
+    font-size: 30px;
+    line-height: 26px;
+  }
+
+  a {
+    color: {{ settings.color_footer_social_link }};
+
+    &:hover {
+      color: darken({{ settings.color_footer_social_link }}, 10%);
+    }
+  }
+}
+/*================ Partials | Images, SVG, and iframes ================*/
+img {
+  border: 0 none;
+}
+
+svg:not(:root) {
+  overflow: hidden;
+}
+
+img.auto,
+.grid__item img,
+.grid__item iframe {
+  max-width: 100%;
+}
+
+.video-wrapper {
+  position: relative;
+  overflow: hidden;
+  max-width: 100%;
+  padding-bottom: 56.25%;
+  height: 0;
+  height: auto;
+
+  iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.table-wrapper {
+  max-width: 100%;
+  overflow: auto;
+}
+/*================ Partials | Layout Styles ================*/
+html {
+  background-color: $colorFooterBg;
+}
+
+body {
+  background-color: $colorBody;
+}
+
+.wrapper {
+  @include clearfix();
+  max-width: $siteWidth;
+  margin: 0 auto;
+  padding: 0 ($gridGutter / 2);
+
+  @include at-query ($min, $small) {
+    padding: 0 $gridGutter;
+  }
+}
+
+.main-content {
+  display: block;
+  margin-top: $gutter * 2;
+  padding-bottom: $gutter * 2;
+}
+
+hr {
+  clear: both;
+  border-top: solid $colorBorder;
+  border-width: 1px 0 0;
+  margin: $gutter 0;
+  height: 0;
+
+  &.hr--small {
+    margin: ($gutter / 2) 0;
+  }
+
+  &.hr--clear {
+    border-top-color: transparent;
+  }
+}
+/*================ Partials | Links and Buttons ================*/
+a,
+.text-link {
+  color: $colorLink;
+  text-decoration: none;
+  background: transparent;
+
+  &:hover,
+  &:focus {
+    color: $colorLinkHover;
+  }
+}
+
+button {
+  overflow: visible;
+}
+
+button[disabled],
+html input[disabled] {
+  cursor: default;
+}
+
+.btn {
+  display: inline-block;
+  padding: 8px 16px;
+  margin: 0;
+  line-height: 1.42;
+  font-size: em(15px);
+  font-weight: bold;
+  text-decoration: none;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  @include prefix('user-select', 'none');
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border-radius: $radius;
+
+  /*================ Set primary button colors - can override later ================*/
+  background-color: $colorBtnPrimary;
+  color: $colorBtnPrimaryText;
+
+  &:hover {
+    background-color: $colorBtnPrimaryHover;
+    color: $colorBtnPrimaryText;
+  }
+
+  &:active,
+  &:focus {
+   background-color: $colorBtnPrimaryActive;
+   color: $colorBtnPrimaryText;
+  }
+
+  &[disabled],
+  &.disabled {
+    cursor: default;
+    color: $disabledBorder;
+    background-color: $disabledGrey;
+  }
+}
+
+.btn--secondary,
+input.btn--secondary {
+  @extend .btn;
+  background-color: $colorBtnSecondary;
+
+  &:hover {
+    background-color: $colorBtnSecondaryHover;
+    color: $colorBtnSecondaryText;
+  }
+
+  &:active,
+  &:focus {
+   background-color: $colorBtnSecondaryActive;
+   color: $colorBtnSecondaryText;
+  }
+}
+
+.btn--small {
+  padding: 4px 5px;
+  font-size: em(12px);
+}
+
+.btn--large {
+  padding: 12px 15px;
+  font-size: em(16px);
+}
+
+.btn--full {
+  width: 100%;
+}
+
+.btn--tertiary,
+input.btn--tertiary {
+  @extend .btn;
+  margin: 0;
+  background-color: $colorBtnTertiary;
+  color: $colorBtnTertiaryText;
+  border: 1px solid $colorBorder;
+
+  &:hover {
+    opacity: 1;
+    background-color: $colorBtnTertiaryHover;
+  }
+
+  &:active,
+  &:focus {
+   background-color: $colorBtnTertiaryActive;
+  }
+}
+
+select.btn--tertiary {
+  padding: 6px 28px 6px 10px;
+  font-size: 0.85em;
+
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: $colorBtnTertiary;
+    color: $colorBtnTertiaryText;
+  }
+}
+
+/*================ Force an input/button to look like a text link ================*/
+.text-link {
+  display: inline;
+  border: 0 none;
+  padding: 0;
+  margin: 0;
+}
+/*================ Partials | Lists ================*/
+ul, ol {
+  margin: 0 0 $gutter;
+  padding: 0;
+}
+
+ul { list-style: none outside; }
+ol { list-style: decimal; }
+ul ul, ul ol,
+ol ol, ol ul { margin: 4px 0 5px 20px; }
+li { margin-bottom: 0.25em; }
+
+ol, ul.square, ul.disc { margin-left: 20px; }
+ul.square { list-style: square outside; }
+ul.disc { list-style: disc outside; }
+ol.alpha { list-style: lower-alpha outside; }
+
+.inline-list li {
+  display: inline-block;
+  margin-bottom: 0;
+}
+/*================ Partials | Tables ================*/
+table {
+  width: 100%;
+  margin-bottom: 1em;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.table-wrap {
+  max-width: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+th {
+  font-weight: bold;
+}
+
+th, td {
+  text-align: left;
+  padding: $gutter / 2;
+  border: 1px solid $colorBorder;
+}
+/*================ Partials | Typography styles ================*/
+body,
+input,
+textarea,
+button,
+select {
+  font-size: $baseFontSize;
+  line-height: 1.8;
+  font-family: $bodyFontStack;
+  color: $colorTextBody;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: $headerFontStack;
+  font-weight: $headerFontWeight;
+  margin: 0 0 ($gutter / 2);
+  line-height: 1.4;
+
+  a {
+    text-decoration: none;
+    font-weight: inherit;
+  }
+}
+
+/*================ Use em() Sass function to declare font-size ================*/
+h1 {
+  font-size: em(36px);
+}
+
+h2 {
+  font-size: em(28px);
+}
+
+h3 {
+  font-size: em(22px);
+}
+
+h4 {
+  font-size: em(20px);
+}
+
+h5 {
+  font-size: em(16px);
+}
+
+h6 {
+  font-size: em(14px);
+}
+
+
+.h1 { @extend h1; }
+.h2 { @extend h2; }
+.h3 { @extend h3; }
+.h4 { @extend h4; }
+.h5 { @extend h5; }
+.h6 { @extend h6; }
+
+p {
+  margin: 0 0 ($gutter / 2) 0;
+
+  img {
+    margin: 0;
+  }
+}
+
+em {
+  font-style: italic;
+}
+
+b, strong {
+  font-weight: bold;
+}
+
+small {
+  font-size: 0.9em;
+}
+
+sup, sub {
+  position: relative;
+  font-size: 60%;
+  vertical-align: baseline;
+}
+sup {
+  top: -0.5em;
+}
+
+sub {
+  bottom: -0.5em;
+}
+
+blockquote {
+  font-size: 1.125em;
+  line-height: 1.45;
+  font-style: italic;
+  margin: 0 0 $gutter;
+  padding: ($gutter / 2) $gutter;
+  border-left: 1px solid $colorBorder;
+
+  p {
+    margin-bottom: 0;
+
+    & + cite {
+      margin-top: $gutter / 2;
+    }
+  }
+
+  cite {
+    display: block;
+    font-size: 0.75em;
+
+    &:before {
+      content: "\2014 \0020";
+    }
+  }
+}
+
+code, pre {
+  background-color: #faf7f5;
+  font-family: Consolas,monospace;
+  font-size: 1em;
+  border: 0 none;
+  padding: 0 2px;
+  color: #51ab62;
+}
+
+pre {
+  overflow: auto;
+  padding: $gutter / 2;
+  margin: 0 0 $gutter;
+}
+/* grid */
+/*============================================================================
+  #Grid Setup
+    - Based on csswizardry grid, but with floated columns, a fixed gutter size, and BEM classes
+    - Breakpoints defined above, under #Breakpoint and Grid Variables
+    - Note the inclusion of .grid-uniform to take care of clearfixes on evenly sized grid items
+==============================================================================*/
+$responsive:         true;
+$mobile-first:       true;
+$use-silent-classes: false;
+$push:               true;
+$pull:               false;
+
+/* Force clearfix on grids */
+.grid,
+.grid-uniform {
+  @include clearfix;
+}
+
+/* Manual grid__item clearfix */
+.grid__item.clear {
+  clear: both;
+}
+
+$class-type: unquote(".");
+
+@if $use-silent-classes == true {
+  $class-type: unquote("%");
+}
+
+@mixin grid-media-query($media-query) {
+  $breakpoint-found: false;
+
+  @each $breakpoint in $breakpoints {
+    $name: nth($breakpoint, 1);
+    $declaration: nth($breakpoint, 2);
+
+    @if $media-query == $name and $declaration {
+      $breakpoint-found: true;
+
+      @media only screen and #{$declaration} {
+        @content;
+      }
+    }
+  }
+
+  @if $breakpoint-found == false {
+    @warn "Breakpoint '#{$media-query}' does not exist";
+  }
+}
+
+/*============================================================================
+  Drop relative positioning into silent classes which can't take advantage of
+  the `[class*="push--"]` and `[class*="pull--"]` selectors.
+==============================================================================*/
+@mixin silent-relative() {
+  @if $use-silent-classes == true {
+    position:relative;
+  }
+}
+/*============================================================================
+  Grid Setup
+    1. Allow the grid system to be used on lists.
+    2. Remove any margins and paddings that might affect the grid system.
+    3. Apply a negative `margin-left` to negate the columns' gutters.
+==============================================================================*/
+#{$class-type}grid,
+#{$class-type}grid-uniform {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  margin-left: -$gridGutter;
+}
+
+#{$class-type}grid__item {
+  float: left;
+  min-height: 1px;
+  padding-left: $gridGutter;
+  vertical-align: top;
+  @if $mobile-first == true {
+    width: 100%;
+  }
+  @include box-sizing();
+}
+
+/*============================================================================
+  Reversed grids allow you to structure your source in the opposite
+  order to how your rendered layout will appear.
+==============================================================================*/
+#{$class-type}grid--rev {
+  @extend #{$class-type}grid;
+  direction: rtl;
+  text-align: left;
+
+  > #{$class-type}grid__item {
+    direction: ltr;
+    text-align: left;
+    float: right;
+  }
+}
+
+/* Gutterless grids have all the properties of regular grids, minus any spacing. */
+#{$class-type}grid--full {
+  @extend #{$class-type}grid;
+  margin-left: 0;
+
+  > #{$class-type}grid__item {
+    padding-left: 0;
+  }
+}
+/*============================================================================
+  WIDTHS
+    - Create width classes, prefixed by the specified namespace.
+==============================================================================*/
+@mixin device-type($namespace:"") {
+  /** Whole */
+  #{$class-type}#{$namespace}one-whole       { width: 100%; }
+
+  /* Halves */
+  #{$class-type}#{$namespace}one-half        { width: 50%; }
+
+  /* Thirds */
+  #{$class-type}#{$namespace}one-third       { width: 33.333%; }
+  #{$class-type}#{$namespace}two-thirds      { width: 66.666%; }
+
+  /* Quarters */
+  #{$class-type}#{$namespace}one-quarter     { width: 25%; }
+  #{$class-type}#{$namespace}two-quarters    { width: 50%; }
+  #{$class-type}#{$namespace}three-quarters  { width: 75%; }
+
+  /* Fifths */
+  #{$class-type}#{$namespace}one-fifth       { width: 20%; }
+  #{$class-type}#{$namespace}two-fifths      { width: 40%; }
+  #{$class-type}#{$namespace}three-fifths    { width: 60%; }
+  #{$class-type}#{$namespace}four-fifths     { width: 80%; }
+
+  /* Sixths */
+  #{$class-type}#{$namespace}one-sixth       { width: 16.666%; }
+  #{$class-type}#{$namespace}two-sixths      { width: 33.333%; }
+  #{$class-type}#{$namespace}three-sixths    { width: 50%; }
+  #{$class-type}#{$namespace}four-sixths     { width: 66.666%; }
+  #{$class-type}#{$namespace}five-sixths     { width: 83.333%; }
+
+  /* Eighths */
+  #{$class-type}#{$namespace}one-eighth      { width: 12.5%; }
+  #{$class-type}#{$namespace}two-eighths     { width: 25%; }
+  #{$class-type}#{$namespace}three-eighths   { width: 37.5%; }
+  #{$class-type}#{$namespace}four-eighths    { width: 50%; }
+  #{$class-type}#{$namespace}five-eighths    { width: 62.5%; }
+  #{$class-type}#{$namespace}six-eighths     { width: 75%; }
+  #{$class-type}#{$namespace}seven-eighths   { width: 87.5%; }
+
+  /* Tenths */
+  #{$class-type}#{$namespace}one-tenth       { width: 10%; }
+  #{$class-type}#{$namespace}two-tenths      { width: 20%; }
+  #{$class-type}#{$namespace}three-tenths    { width: 30%; }
+  #{$class-type}#{$namespace}four-tenths     { width: 40%; }
+  #{$class-type}#{$namespace}five-tenths     { width: 50%; }
+  #{$class-type}#{$namespace}six-tenths      { width: 60%; }
+  #{$class-type}#{$namespace}seven-tenths    { width: 70%; }
+  #{$class-type}#{$namespace}eight-tenths    { width: 80%; }
+  #{$class-type}#{$namespace}nine-tenths     { width: 90%; }
+
+  /* Twelfths */
+  #{$class-type}#{$namespace}one-twelfth     { width: 8.333%; }
+  #{$class-type}#{$namespace}two-twelfths    { width: 16.666%; }
+  #{$class-type}#{$namespace}three-twelfths  { width: 25%; }
+  #{$class-type}#{$namespace}four-twelfths   { width: 33.333%; }
+  #{$class-type}#{$namespace}five-twelfths   { width: 41.666% }
+  #{$class-type}#{$namespace}six-twelfths    { width: 50%; }
+  #{$class-type}#{$namespace}seven-twelfths  { width: 58.333%; }
+  #{$class-type}#{$namespace}eight-twelfths  { width: 66.666%; }
+  #{$class-type}#{$namespace}nine-twelfths   { width: 75%; }
+  #{$class-type}#{$namespace}ten-twelfths    { width: 83.333%; }
+  #{$class-type}#{$namespace}eleven-twelfths { width: 91.666%; }
+}
+
+/*================ Clearfix helper on uniform grids ================*/
+@mixin clearfix-helper($namespace:"") {
+  .grid-uniform {
+    #{$class-type}#{$namespace}one-half:nth-child(2n+1),
+    #{$class-type}#{$namespace}one-third:nth-child(3n+1),
+    #{$class-type}#{$namespace}one-quarter:nth-child(4n+1),
+    #{$class-type}#{$namespace}one-fifth:nth-child(5n+1),
+    #{$class-type}#{$namespace}one-sixth:nth-child(6n+1),
+    #{$class-type}#{$namespace}two-sixths:nth-child(3n+1),
+    #{$class-type}#{$namespace}three-sixths:nth-child(2n+1),
+    #{$class-type}#{$namespace}two-eighths:nth-child(4n+1),
+    #{$class-type}#{$namespace}four-eighths:nth-child(2n+1),
+    #{$class-type}#{$namespace}five-tenths:nth-child(2n+1),
+    #{$class-type}#{$namespace}one-twelfth:nth-child(12n+1),
+    #{$class-type}#{$namespace}two-twelfths:nth-child(6n+1),
+    #{$class-type}#{$namespace}three-twelfths:nth-child(4n+1),
+    #{$class-type}#{$namespace}four-twelfths:nth-child(3n+1),
+    #{$class-type}#{$namespace}six-twelfths:nth-child(2n+1)    { clear: both; }
+  }
+}
+
+/*================ Helper show/hide classes around our breakpoints ================*/
+@mixin device-helper($namespace:"") {
+  #{$class-type}#{$namespace}show        { display: block!important; }
+  #{$class-type}#{$namespace}hide        { display: none!important; }
+
+  #{$class-type}#{$namespace}text-left   { text-align: left!important; }
+  #{$class-type}#{$namespace}text-right  { text-align: right!important; }
+  #{$class-type}#{$namespace}text-center { text-align: center!important; }
+
+  #{$class-type}#{$namespace}left        { float: left!important; }
+  #{$class-type}#{$namespace}right       { float: right!important; }
+}
+
+/*================ Our regular, non-responsive width and helper classes ================*/
+@include device-type();
+@include device-helper();
+
+/*================ Our responsive classes, if we have enabled them ================*/
+@if $responsive == true {
+  @each $name in $breakpoint-has-widths {
+    @include grid-media-query($name) {
+      @include device-type('#{$name}--');
+      @include device-helper('#{$name}--');
+      @include clearfix-helper('#{$name}--');
+    }
+  }
+}
+/*============================================================================
+  PULL
+    - Pull classes, to move grid items back to the left by certain amounts
+==============================================================================*/
+@mixin pull-setup($namespace: "") {
+  /* Whole */
+  #{$class-type}pull--#{$namespace}one-whole       { right: 100%; @include silent-relative(); }
+
+  /* Halves */
+  #{$class-type}pull--#{$namespace}one-half        { right: 50%; @include silent-relative(); }
+
+  /* Thirds */
+  #{$class-type}pull--#{$namespace}one-third       { right: 33.333%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}two-thirds      { right: 66.666%; @include silent-relative(); }
+
+  /* Quarters */
+  #{$class-type}pull--#{$namespace}one-quarter     { right: 25%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}two-quarters    { right: 50%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}three-quarters  { right: 75%; @include silent-relative(); }
+
+  /* Fifths */
+  #{$class-type}pull--#{$namespace}one-fifth       { right: 20%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}two-fifths      { right: 40%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}three-fifths    { right: 60%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}four-fifths     { right: 80%; @include silent-relative(); }
+
+  /* Sixths */
+  #{$class-type}pull--#{$namespace}one-sixth       { right: 16.666%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}two-sixths      { right: 33.333%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}three-sixths    { right: 50%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}four-sixths     { right: 66.666%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}five-sixths     { right: 83.333%; @include silent-relative(); }
+
+  /* Eighths */
+  #{$class-type}pull--#{$namespace}one-eighth      { right: 12.5%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}two-eighths     { right: 25%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}three-eighths   { right: 37.5%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}four-eighths    { right: 50%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}five-eighths    { right: 62.5%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}six-eighths     { right: 75%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}seven-eighths   { right: 87.5%; @include silent-relative(); }
+
+  /* Tenths */
+  #{$class-type}pull--#{$namespace}one-tenth       { right: 10%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}two-tenths      { right: 20%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}three-tenths    { right: 30%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}four-tenths     { right: 40%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}five-tenths     { right: 50%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}six-tenths      { right: 60%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}seven-tenths    { right: 70%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}eight-tenths    { right: 80%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}nine-tenths     { right: 90%; @include silent-relative(); }
+
+  /* Twelfths */
+  #{$class-type}pull--#{$namespace}one-twelfth     { right: 8.333%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}two-twelfths    { right: 16.666%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}three-twelfths  { right: 25%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}four-twelfths   { right: 33.333%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}five-twelfths   { right: 41.666%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}six-twelfths    { right: 50%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}seven-twelfths  { right: 58.333%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}eight-twelfths  { right: 66.666%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}nine-twelfths   { right: 75%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}ten-twelfths    { right: 83.333%; @include silent-relative(); }
+  #{$class-type}pull--#{$namespace}eleven-twelfths { right: 91.666%; @include silent-relative(); }
+}
+
+@if $pull == true {
+  [class*="pull--"]{ position:relative; }
+
+  @include pull-setup();
+
+  @if $responsive == true {
+    @each $name in $breakpoint-has-pull {
+      @include grid-media-query($name) {
+        @include pull-setup('#{$name}--');
+      }
+    }
+  }
+}
+/*============================================================================
+  PUSH
+    - Push classes, to move grid items over to the right by certain amounts
+==============================================================================*/
+@mixin push-setup($namespace: "") {
+  /* Whole */
+  #{$class-type}push--#{$namespace}one-whole       { left: 100%; @include silent-relative(); }
+
+  /* Halves */
+  #{$class-type}push--#{$namespace}one-half        { left: 50%; @include silent-relative(); }
+
+  /* Thirds */
+  #{$class-type}push--#{$namespace}one-third       { left: 33.333%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}two-thirds      { left: 66.666%; @include silent-relative(); }
+
+  /* Quarters */
+  #{$class-type}push--#{$namespace}one-quarter     { left: 25%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}two-quarters    { left: 50%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}three-quarters  { left: 75%; @include silent-relative(); }
+
+  /* Fifths */
+  #{$class-type}push--#{$namespace}one-fifth       { left: 20%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}two-fifths      { left: 40%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}three-fifths    { left: 60%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}four-fifths     { left: 80%; @include silent-relative(); }
+
+  /* Sixths */
+  #{$class-type}push--#{$namespace}one-sixth       { left: 16.666%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}two-sixths      { left: 33.333%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}three-sixths    { left: 50%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}four-sixths     { left: 66.666%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}five-sixths     { left: 83.333%; @include silent-relative(); }
+
+  /* Eighths */
+  #{$class-type}push--#{$namespace}one-eighth      { left: 12.5%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}two-eighths     { left: 25%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}three-eighths   { left: 37.5%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}four-eighths    { left: 50%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}five-eighths    { left: 62.5%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}six-eighths     { left: 75%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}seven-eighths   { left: 87.5%; @include silent-relative(); }
+
+  /* Tenths */
+  #{$class-type}push--#{$namespace}one-tenth       { left: 10%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}two-tenths      { left: 20%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}three-tenths    { left: 30%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}four-tenths     { left: 40%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}five-tenths     { left: 50%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}six-tenths      { left: 60%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}seven-tenths    { left: 70%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}eight-tenths    { left: 80%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}nine-tenths     { left: 90%; @include silent-relative(); }
+
+  /* Twelfths */
+  #{$class-type}push--#{$namespace}one-twelfth     { left: 8.333%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}two-twelfths    { left: 16.666%; @include silent-relative();  }
+  #{$class-type}push--#{$namespace}three-twelfths  { left: 25%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}four-twelfths   { left: 33.333%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}five-twelfths   { left: 41.666%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}six-twelfths    { left: 50%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}seven-twelfths  { left: 58.333%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}eight-twelfths  { left: 66.666%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}nine-twelfths   { left: 75%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}ten-twelfths    { left: 83.333%; @include silent-relative(); }
+  #{$class-type}push--#{$namespace}eleven-twelfths { left: 91.666%; @include silent-relative(); }
+}
+
+@if $push == true {
+  [class*="push--"]{ position:relative; }
+
+  @include push-setup();
+
+  @if $responsive == true {
+    @each $name in $breakpoint-has-push {
+      @include grid-media-query($name) {
+        @include push-setup('#{$name}--');
+      }
+    }
+  }
+}
+/* module */
+/*================ Module | Breadcrumbs and Tag Sorting ================*/
+.breadcrumb,
+.tags {
+  color: $colorPrimary;
+
+  a {
+    color: $colorTextBody;
+
+    &:hover,
+    &:focus,
+    &:active {
+      color: $colorPrimary;
+    }
+  }
+}
+
+.breadcrumb {
+  margin-bottom: $gutter / 2.5;
+  color: $colorPrimary;
+
+  a,
+  span {
+    display: inline;
+    padding-right: 7px;
+    margin-right: 7px;
+
+    &:first-child {
+      padding-left: 0;
+    }
+  }
+}
+
+.breadcrumb__sep {
+  font-size: 1.4em;
+  line-height: 1;
+}
+
+.tags {
+  color: $colorPrimary;
+
+  a {
+    display: inline-block;
+    padding: 5px 7px 5px 0;
+    margin-right: 12px;
+  }
+}
+
+.tag--active a {
+  color: $colorPrimary;
+}
+/*================ Module | Footer ================*/
+.site-footer {
+  background-color: $colorFooterBg;
+  padding-top: $gutter;
+  padding-bottom: 20px;
+  color: $colorFooterText;
+
+  form {
+    margin-bottom: 0;
+  }
+
+  p {
+    margin-bottom: 10px;
+  }
+
+  ul {
+    margin-bottom: 0;
+  }
+
+  @include at-query ($min, $large) {
+    padding-top: $gutter * 2;
+  }
+
+  @include at-query ($max, $medium) {
+    .grid__item {
+      margin-bottom: $gutter;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+.site-footer__links a {
+  color: $colorFooterText;
+
+  &:hover,
+  &:active {
+    color: $colorLink;
+  }
+}
+/*================ Module | Site Nav and Dropdowns ================*/
+.site-nav {
+  font-size: em(16px);
+  cursor: default;
+  margin: 0 auto;
+  text-align: center;
+
+  li {
+    margin: 0;
+    display: block;
+  }
+
+  & > li {
+    position: relative;
+    display: inline-block;
+
+    &:first-child a {
+      padding-left: 0;
+    }
+
+    &:last-child a {
+      padding-right: 0;
+    }
+  }
+
+  @include at-query ($min, $large) {
+    margin: 0;
+    text-align: right;
+  }
+}
+
+.site-nav__link {
+  display: block;
+  text-decoration: none;
+  padding: $gutter / 2;
+  white-space: nowrap;
+  color: $colorNavText;
+
+  &:hover,
+  &:active,
+  &:focus {
+    color: $colorPrimary;
+  }
+
+  .site-nav--active & {
+    font-weight: bold;
+  }
+
+  .icon-arrow-down {
+    font-size: 0.7em;
+    color: $colorPrimary;
+  }
+}
+
+/*================ Dropdowns ================*/
+.site-nav__dropdown {
+  display: none;
+  position: absolute;
+  left: 0;
+  margin: 0;
+  text-align: left;
+  z-index: 20;
+  font-size: 0.85em;
+  box-shadow: 0px 1px 1px rgba(0,0,0,0.1);
+
+  .supports-no-touch .site-nav--has-dropdown:hover &,
+  .site-nav--has-dropdown.nav-hover &,
+  .nav-focus + & {
+    display: block;
+  }
+
+  .site-nav__link {
+    background-color: $colorHeader;
+    font-weight: normal;
+    padding: 7px 20px 7px 15px;
+
+    &:hover,
+    &:active,
+    &:focus {
+      color: $colorPrimary;
+    }
+  }
+}
+
+/*================ Search bar in header ================*/
+.nav-search {
+  position: relative;
+  padding: 7px 0;
+
+  @include at-query ($max, $medium) {
+    padding: 0 0 ($gutter / 2);
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .input-group,
+  .input-group-field {
+    margin-bottom: 0;
+  }
+}
+
+/*================ Header message (theme setting) ================*/
+.header-message {
+  text-align: center;
+  margin: ($gutter / 2) 0 0;
+  line-height: 1;
+
+  @include at-query($min, $large) {
+    margin-bottom: $gutter / 2;
+  }
+}
+/*================ Module | Notes and Form Feedback ================*/
+.note,
+.errors {
+  border-radius: $radius;
+  padding: 6px 12px;
+  margin-bottom: $gutter / 2;
+  border: 1px solid transparent;
+  font-size: 0.9em;
+  text-align: left;
+
+  ul,
+  ol {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  li:last-child {
+    margin-bottom: 0;
+  }
+
+  p {
+    margin-bottom: 0;
+  }
+}
+
+.note {
+  border-color: $colorBorder;
+}
+
+.errors {
+  ul {
+    list-style: disc outside;
+    margin-left: 20px;
+  }
+}
+
+.form-success {
+  color: $successGreen;
+  background-color: $successGreenBg;
+  border-color: $successGreen;
+
+  a {
+    color: $successGreen;
+    text-decoration: underline;
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
+}
+
+.form-error,
+.errors {
+  color: $errorRed;
+  background-color: $errorRedBg;
+  border-color: $errorRed;
+
+  a {
+    color: $errorRed;
+    text-decoration: underline;
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
+}
+/*================ Module | Pagination ================*/
+.pagination {
+  margin-bottom: 1em;
+}
+
+.pagination-custom {
+  display: inline-block;
+  padding-left: 0;
+  margin: 0 0 $gutter;
+  border-radius: $radius;
+}
+
+.pagination-custom > li {
+  display: inline;
+}
+
+.pagination-custom > li > a,
+.pagination-custom > li > span {
+  position: relative;
+  float: left;
+  padding: 5px 10px;
+  margin-left: -1px;
+  line-height: 1.42;
+  text-decoration: none;
+}
+
+.pagination-custom > li:first-child > a,
+.pagination-custom > li:first-child > span {
+  margin-left: 0;
+}
+
+.pagination-custom > .active > a,
+.pagination-custom > .active > span,
+.pagination-custom > .active > a:hover,
+.pagination-custom > .active > span:hover,
+.pagination-custom > .active > a:focus,
+.pagination-custom > .active > span:focus {
+  z-index: 2;
+  cursor: default;
+  color: $colorTextBody;
+}
+
+.pagination-custom > .disabled > span,
+.pagination-custom > .disabled > a,
+.pagination-custom > .disabled > a:hover,
+.pagination-custom > .disabled > a:focus {
+  color: $colorTextBody;
+  cursor: not-allowed;
+}
+
+.pagination-custom-lg > li > a,
+.pagination-custom-lg > li > span {
+  padding: 10px 16px;
+  font-size: em(18px);
+}
+
+.pagination-custom-sm > li > a,
+.pagination-custom-sm > li > span {
+  padding: 5px 10px;
+  font-size: em(12px);
+}
+/*================ Module | Rich Text Editor ================*/
+.rte {
+
+  // Add some top margin to headers from the rich text editor
+  h1, h2, h3, h4, h5, h6 {
+    margin-top: 2em;
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
+  > div {
+    margin-bottom: $gutter / 2;
+  }
+
+  ul, ol {
+    margin-left: 35px;
+  }
+
+  ul {
+    @extend ul.disc;
+  }
+
+  li {
+    margin-bottom: 0.4em;
+  }
+}
+
+.rte--header {
+  margin-bottom: $gutter;
+}
+/*================ Module | Section Headers ================*/
+.section-header {
+  text-align: center;
+  margin-bottom: $gutter / 2;
+  border-bottom: 3px solid $colorBorder;
+}
+
+.section-header--large {
+  margin-bottom: $gutter;
+}
+
+.section-header--breadcrumb {
+  margin-bottom: $gutter / 2;
+}
+
+.section-header__title--left,
+.section-header__link--right {
+  padding-bottom: $gutter / 2.5;
+  margin-bottom: 0;
+}
+
+.section-header__link--right {
+  margin-top: $gutter / 2;
+}
+
+@include at-query ($min, $large) {
+  .section-header {
+    display: table;
+    width: 100%;
+    text-align: left;
+  }
+
+  .section-header__title--left {
+    display: table-cell;
+    vertical-align: middle;
+
+    h1, h2, h3, h4,
+    .h1, .h2, .h3, .h4 {
+      margin-bottom: 0;
+    }
+  }
+
+  .section-header__link--right {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: right;
+    width: 335px;
+    margin-top: 0;
+
+    @include at-query ($max, $medium) {
+      margin-bottom: $gutter;
+    }
+  }
+}
+
+.section-header__link--right {
+
+  .form-horizontal {
+    display: inline-block;
+  }
+
+  .form-horizontal,
+  .collection-view {
+    vertical-align: middle;
+  }
+
+  select,
+  option {
+    color: $colorLink;
+  }
+
+  @include at-query ($min, $postSmall) {
+    label + select,
+    .collection-view {
+      margin-left: $gutter / 2;
+    }
+  }
+}
+
+.collection-view {
+  @extend .btn--tertiary;
+  display: none;
+  padding: 0;
+  height: 33px;
+  overflow: hidden;
+
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: $colorBtnTertiary;
+    color: $colorBtnTertiaryText;
+  }
+
+  /*================ Only show on larger screens ================*/
+  @include at-query ($min, $large) {
+    display: inline-block;
+  }
+}
+
+.change-view {
+  display: block;
+  background: none;
+  border: 0 none;
+  float: left;
+  padding: 0 9px;
+  margin: 0;
+  color: $colorBorder;
+  line-height: 33px; // height of .collection-view
+
+  &:hover,
+  &:focus {
+    color: $colorPrimary;
+  }
+}
+
+.change-view--active {
+  cursor: default;
+  color: $colorPrimary;
+}
+
+.view-more {
+  clear: both;
+  display: block;
+  font-size: 0.85em;
+  text-align: center;
+  margin-top: $gutter / 2;
+
+  @include at-query($min, $large) {
+    display: none;
+  }
+}
+/*================ Module | Site Header ================*/
+.site-header {
+  padding: 40px 0;
+  background-color: $colorHeader;
+
+  @include at-query ($min, $large) {
+    padding: $gutter 0;
+
+    .large--display-table {
+      min-height: 86px;
+    }
+  }
+
+  @include at-query ($min, $large) {
+    .grid {
+      display: table;
+      table-layout: fixed;
+      width: 100%;
+
+      > .grid__item {
+        float: none;
+        display: table-cell;
+        vertical-align: middle;
+      }
+    }
+  }
+}
+
+.site-header__logo {
+  text-align: center;
+  margin: 0 auto;
+  max-width: 100%;
+
+  a {
+    color: $colorNavText;
+    max-width: {{ settings.logo_max_width }}px;
+    margin: 0 auto;
+  }
+
+  a,
+  a:hover,
+  a:focus {
+    text-decoration: none;
+  }
+
+  a, img {
+    display: block;
+  }
+
+  img {
+    margin: 0 auto;
+  }
+}
+
+.site-header--text-links {
+  margin-bottom: 0;
+}
+/* templates */
+/*================ Templates | Blog and Comments ================*/
+.comment {
+  margin-bottom: $gutter;
+
+  & + & {
+    border-top: 1px solid $colorBorder;
+    padding-top: $gutter;
+  }
+}
+
+.meta-sep {
+  position: relative;
+  top: -1px;
+  padding: 0 5px;
+  font-size: 0.7em;
+}
+
+.blog-date {
+  margin-top: -0.5em;
+}
+/*================ Templates | Cart Page ================*/
+.cart__row {
+  position: relative;
+  padding-top: $gutter;
+
+  & + & {
+    margin-top: $gutter;
+    border-top: 1px solid $colorBorder;
+  }
+
+  &:first-child {
+    margin-top: 0;
+  }
+
+  &:first-child {
+    padding-top: 0;
+    border-top: 0 none;
+  }
+
+  .js-qty {
+    margin: 0;
+  }
+}
+
+@include at-query ($min, $large) {
+  .cart__row--table-large {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+
+    .grid__item {
+      display: table-cell;
+      vertical-align: middle;
+      float: none;
+    }
+  }
+}
+
+.cart__image {
+  display: block;
+
+  img {
+    display: block;
+  }
+}
+
+.cart__subtotal {
+  margin: 0 0 0 ($gutter / 3);
+  display: inline;
+}
+
+.cart__mini-labels {
+  display: block;
+  margin: ($gutter / 3) 0;
+  font-size: em(12px);
+
+  @include at-query ($min, $large) {
+    display: none;
+  }
+}
+
+.cart__remove {
+  display: block;
+}
+
+.cart__note-add.is-hidden {
+  display: none;
+}
+
+.cart__note {
+  display: none;
+
+  &.is-active {
+    display: block;
+  }
+}
+
+.cart__additional_checkout {
+  margin: ($gutter / 2) 0 0;
+
+  input {
+    padding: 0;
+  }
+
+  .google-wallet-button-holder {
+    display: inline-block;
+    vertical-align: 10px;
+  }
+}
+/*================ Templates | Product Page ================*/
+.product-single__variants {
+  display: none;
+
+  .no-js & {
+    display: block;
+  }
+}
+
+.product-single__photos {
+  margin-bottom: $gutter / 2;
+}
+
+.product-single__photos,
+.product-single__thumbnails {
+  a, img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+  }
+}
+
+.product-single__hero {
+  .grid__item {
+    display: inline-block;
+    float: none;
+    vertical-align: middle;
+  }
+
+  @include at-query ($min, $large) {
+    .grid__item + .grid__item {
+      margin-left: -5px;
+    }
+  }
+}
+
+.product-single__thumbnails {
+  margin-left: -$gutter / 2;
+  margin-bottom: -$gutter / 2;
+
+  .grid__item {
+    padding-left: $gutter / 2;
+  }
+
+  li {
+    margin-bottom: $gutter / 2;
+  }
+}
+
+.product-single__prices {
+  margin-bottom: $gutter / 2;
+}
+
+.product-single__price {
+  color: $colorPrimary;
+  font-size: em(30px);
+  font-weight: $headerFontWeight;
+}
+
+.product-single__sale-price {
+  opacity: 0.7;
+  margin-left: 6px;
+  font-size: em(24px);
+  font-weight: $headerFontWeight;
+}
+
+.product-single__quantity {
+  margin-bottom: $gutter / 2;
+
+  &.is-hidden {
+    display: none;
+  }
+
+  .quantity-selector,
+  .js-qty {
+    display: inline-block;
+  }
+
+  .js-qty {
+    margin-left: $gutter / 2;
+  }
+}
+
+.js-qty__adjust,
+.ajaxcart__qty-adjust {
+  @extend .btn--tertiary;
+  top: 2px;
+  bottom: 2px;
+  padding: 4px 8px;
+}
+
+/*================ Review tab switcher ================*/
+.tab-switch__nav {
+  padding: 0;
+  list-style: none;
+}
+
+.tab-switch__trigger {
+  display: block;
+  color: $colorTextBody;
+  font-weight: normal;
+  margin-right: $gutter / 2;
+
+  &:hover,
+  &:active {
+    font-weight: normal;
+  }
+
+  &.is-active {
+    font-weight: bold;
+    color: $colorTextBody;
+  }
+}
+
+.tab-switch__content {
+  display: block;
+
+  &.is-hidden {
+    display: none;
+  }
+}
+/* helpers */
+/*============================================================================
+  #Breakpoint
+==============================================================================*/
+$viewportIncrement: 1px;
+
+$small: 480px;
+$medium: 768px;
+$large: 769px;
+/*============================================================================
+  Ajaxify Colours
+  Add your theme colors in here, or create new styles.
+    - If creating new styles, you may have to restyle text, headers and links
+==============================================================================*/
+$colorBody: {{ settings.color_body_bg }};
+$colorTextBody: {{ settings.color_body_text }};
+$colorBorder: {{ settings.color_borders }};
+
+/*============================================================================
+  #Grid Variables
+==============================================================================*/
+$postSmall: $small + $viewportIncrement;
+$preMedium: $medium - $viewportIncrement;
+$preLarge: $large - $viewportIncrement;
+
+$gutter: 30px;
+/*============================================================================
+  Dependency-free breakpoint mixin
+// http://blog.grayghostvisuals.com/sass/sass-media-query-mixin/
+==============================================================================*/
+$min: min-width;
+$max: max-width;
+@mixin at-query ($constraint, $viewport1, $viewport2:null) {
+  @if $constraint == $min {
+    @media screen and ($min: $viewport1) {
+      @content;
+    }
+  } @else if $constraint == $max {
+    @media screen and ($max: $viewport1) {
+      @content;
+    }
+  } @else {
+    @media screen and ($min: $viewport1) and ($max: $viewport2) {
+      @content;
+    }
+  }
+}
+
+/*============================================================================
+  Sass Helpers
+==============================================================================*/
+@mixin prefix($property, $value) {
+  -webkit-#{$property}: #{$value};
+  -moz-#{$property}: #{$value};
+  -ms-#{$property}: #{$value};
+  -o-#{$property}: #{$value};
+  #{$property}: #{$value};
+}
+
+@mixin transform-origin($origin) {
+  @include prefix('transform-origin', #{$origin});
+}
+
+@mixin transform-style($style: preserve-3d) {
+  @include prefix('transform-style', #{$style});
+}
+
+@mixin perspective($perspective) {
+  @include prefix('perspective', #{$perspective});
+}
+
+@mixin backface($visibility: hidden) {
+  @include prefix('backface-visibility', #{$visibility});
+}
+
+@mixin box-sizing($box-sizing: border-box) {
+  -webkit-box-sizing: #{$box-sizing};
+  -moz-box-sizing: #{$box-sizing};
+  box-sizing: #{$box-sizing};
+}
+
+@mixin transform($transform) {
+  @include prefix('transform', #{$transform});
+}
+
+@mixin transition($transition: 0.1s all) {
+  @include prefix('transition', #{$transition});
+}
+
+@mixin clearfix() {
+  &:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
+@function color-control($color) {
+  @if (lightness( $color ) > 40) {
+    @return #000;
+  }
+  @else {
+    @return #fff;
+  }
+}
+/* cart */
+/*============================================================================
+  Ajaxify Cart - General
+==============================================================================*/
+.ajaxcart__content {
+  position: relative;
+  background-color: $colorBody;
+  @include perspective(1000px);
+  @include transform-style(preserve-3d);
+  @include transition(all 450ms cubic-bezier(0.57,.06,.05,.95));
+  padding-top: $gutter;
+  padding-bottom: $gutter;
+  overflow: hidden;
+
+  .is-visible & {
+    @include transition(all 550ms cubic-bezier(0.57, 0.06, 0.05, 0.95));
+  }
+
+  form {
+    margin-bottom: 0;
+  }
+
+  @include at-query ($max, $medium) {
+    padding-top: 15px;
+    padding-bottom: 15px;
+  }
+
+  .cart__header-labels {
+    display: none;
+
+    & + .cart__row {
+      margin-top: 0;
+      border-top: 0 none;
+    }
+  }
+}
+
+// Row and column spacing
+.ajaxcart__inner {
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.ajaxcart__product {
+  position: relative;
+  padding: 10px 0;
+
+  &:first-child {
+    padding-top: 0;
+  }
+}
+
+.ajaxcart__product,
+.cart__row {
+  max-height: 500px;
+  visibility: visible;
+
+  &.is-removed {
+    overflow: hidden;
+    opacity: 0;
+    padding: 0;
+    margin: -1px 0 0 0;
+    visibility: hidden;
+    @include transform('rotateX(-92deg)');
+    @include transform-origin(top);
+    @include backface(hidden);
+    @include transition(all 450ms cubic-bezier(0.57,.06,.05,.95));
+    max-height: 0;
+  }
+}
+
+.ajaxcart__row {
+  clear: both;
+  @include clearfix;
+}
+
+.ajaxcart__product-image {
+  display: block;
+  overflow: hidden;
+  margin-bottom: 15px;
+
+  img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+  }
+}
+/*============================================================================
+  #Quantity Selectors in the Ajax Cart
+==============================================================================*/
+.ajaxcart__qty {
+  @extend .js-qty;
+  display: inline-block;
+  margin: 0;
+
+  .is-loading & {
+    opacity: 0.5;
+    @include transition(none);
+  }
+}
+
+.ajaxcart__qty-adjust {
+  @extend .js-qty__adjust;
+}
+
+.ajaxcart__qty--plus {
+  @extend .js-qty__adjust--plus;
+}
+
+.ajaxcart__qty--minus {
+  @extend .js-qty__adjust--minus;
+}
+/*============================================================================
+  General Styles
+==============================================================================*/
+@include at-query ($max, $small) {
+  body.ajaxcart--is-visible {
+    overflow: hidden;
+  }
+}
+
+.ajaxcart__flip-loader {
+  display: none;
+  opacity: 0;
+  position: absolute;
+  right: -24px;
+  top: 50%;
+  margin-top: -5px;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  @include transition(opacity 0.1s);
+  background-repeat: no-repeat;
+  background-image: url(data:image/gif;base64,R0lGODlhEAAQAPYAAP///8zMzPX19enp6d7e3tjY2NnZ2eHh4evr6/f39+zs7NPT09PT09XV1dbW1tjY2ODg4PDw8NHR0eLi4vr6+vr6+vLy8ufn59vb297e3vHx8fT09NfX19DQ0Ofn5+3t7d7e3uTk5Pj4+Obm5s7OzuDg4Orq6uDg4O/v79nZ2c3Nze7u7unp6dDQ0M3Nzfn5+fz8/OPj4+Xl5fz8/OXl5e3t7f39/f39/fHx8fPz8/z8/Pb29u7u7vv7+/X19fj4+Pf39/T09PLy8vHx8fj4+Pb29vv7+/b29uTk5O/v7+/v79ra2tzc3N3d3d/f39jY2NfX1/Ly8uPj49XV1fr6+tTU1Ofn593d3dTU1NHR0evr69vb28/Pz+bm5t/f39bW1vPz8/T09Pn5+fDw8OTk5Ojo6Ovr69zc3Ojo6Nra2tra2tLS0uzs7M/Pz87Ozu3t7czMzOrq6tPT08/Pz9fX1+Li4tXV1c3NzeLi4tLS0tzc3OHh4eXl5QAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAAHjYAAgoOEhYUbIykthoUIHCQqLoI2OjeFCgsdJSsvgjcwPTaDAgYSHoY2FBSWAAMLE4wAPT89ggQMEbEzQD+CBQ0UsQA7RYIGDhWxN0E+ggcPFrEUQjuCCAYXsT5DRIIJEBgfhjsrFkaDERkgJhswMwk4CDzdhBohJwcxNB4sPAmMIlCwkOGhRo5gwhIGAgAh+QQJCgAAACwAAAAAEAAQAAAHjIAAgoOEhYU7A1dYDFtdG4YAPBhVC1ktXCRfJoVKT1NIERRUSl4qXIRHBFCbhTKFCgYjkII3g0hLUbMAOjaCBEw9ukZGgidNxLMUFYIXTkGzOmLLAEkQCLNUQMEAPxdSGoYvAkS9gjkyNEkJOjovRWAb04NBJlYsWh9KQ2FUkFQ5SWqsEJIAhq6DAAIBACH5BAkKAAAALAAAAAAQABAAAAeJgACCg4SFhQkKE2kGXiwChgBDB0sGDw4NDGpshTheZ2hRFRVDUmsMCIMiZE48hmgtUBuCYxBmkAAQbV2CLBM+t0puaoIySDC3VC4tgh40M7eFNRdH0IRgZUO3NjqDFB9mv4U6Pc+DRzUfQVQ3NzAULxU2hUBDKENCQTtAL9yGRgkbcvggEq9atUAAIfkECQoAAAAsAAAAABAAEAAAB4+AAIKDhIWFPygeEE4hbEeGADkXBycZZ1tqTkqFQSNIbBtGPUJdD088g1QmMjiGZl9MO4I5ViiQAEgMA4JKLAm3EWtXgmxmOrcUElWCb2zHkFQdcoIWPGK3Sm1LgkcoPrdOKiOCRmA4IpBwDUGDL2A5IjCCN/QAcYUURQIJIlQ9MzZu6aAgRgwFGAFvKRwUCAAh+QQJCgAAACwAAAAAEAAQAAAHjIAAgoOEhYUUYW9lHiYRP4YACStxZRc0SBMyFoVEPAoWQDMzAgolEBqDRjg8O4ZKIBNAgkBjG5AAZVtsgj44VLdCanWCYUI3txUPS7xBx5AVDgazAjC3Q3ZeghUJv5B1cgOCNmI/1YUeWSkCgzNUFDODKydzCwqFNkYwOoIubnQIt244MzDC1q2DggIBACH5BAkKAAAALAAAAAAQABAAAAeJgACCg4SFhTBAOSgrEUEUhgBUQThjSh8IcQo+hRUbYEdUNjoiGlZWQYM2QD4vhkI0ZWKCPQmtkG9SEYJURDOQAD4HaLuyv0ZeB4IVj8ZNJ4IwRje/QkxkgjYz05BdamyDN9uFJg9OR4YEK1RUYzFTT0qGdnduXC1Zchg8kEEjaQsMzpTZ8avgoEAAIfkECQoAAAAsAAAAABAAEAAAB4iAAIKDhIWFNz0/Oz47IjCGADpURAkCQUI4USKFNhUvFTMANxU7KElAhDA9OoZHH0oVgjczrJBRZkGyNpCCRCw8vIUzHmXBhDM0HoIGLsCQAjEmgjIqXrxaBxGCGw5cF4Y8TnybglprLXhjFBUWVnpeOIUIT3lydg4PantDz2UZDwYOIEhgzFggACH5BAkKAAAALAAAAAAQABAAAAeLgACCg4SFhjc6RhUVRjaGgzYzRhRiREQ9hSaGOhRFOxSDQQ0uj1RBPjOCIypOjwAJFkSCSyQrrhRDOYILXFSuNkpjggwtvo86H7YAZ1korkRaEYJlC3WuESxBggJLWHGGFhcIxgBvUHQyUT1GQWwhFxuFKyBPakxNXgceYY9HCDEZTlxA8cOVwUGBAAA7AAAAAAAAAAAA);
+
+  .flip--is-loading & {
+    display: block;
+    opacity: 1;
+  }
+}
+
+form[action="/cart/add"],
+form[action^="/cart/add"] {
+  @include clearfix;
+}
+/*============================================================================
+  #Quantity Selectors
+==============================================================================*/
+.js-qty {
+  position: relative;
+  margin-bottom: 1em;
+  max-width: 100px;
+  min-width: 75px;
+  overflow: visible;
+  @include backface(hidden);
+
+  input[type="text"] {
+    display: block;
+    border-color: transparent;
+    background: none;
+    color: inherit;
+    text-align: center;
+    width: 100%;
+    padding: 5px 25px;
+    margin: 0;
+  }
+}
+
+.js-qty__adjust {
+  cursor: pointer;
+  position: absolute;
+  display: block;
+  top: -1px;
+  bottom: -1px;
+  border: 0 none;
+  background: none;
+  text-align: center;
+  overflow: hidden;
+  -webkit-user-select: none;
+  -moz-user-select:    none;
+  -ms-user-select:     none;
+  -o-user-select:      none;
+  user-select:         none;
+  @include transition(all 0.2s ease-out);
+
+  &:hover,
+  &:focus {
+    opacity: 0.6;
+  }
+
+  &:active {
+    opacity: 1;
+  }
+}
+
+.js-qty__adjust--plus {
+  right: 0;
+}
+
+.js-qty__adjust--minus {
+  left: 0;
+}
+/*============================================================================
+  Ajaxify Flip
+==============================================================================*/
+.flip {
+  display: block;
+  float: left;
+  position: relative;
+  @include perspective(600px);
+}
+
+.flip__front,
+.flip__back {
+  @include transform-style(preserve-3d);
+  @include transition(all 0.3s);
+  @include backface(hidden);
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+
+  &:focus {
+    outline: 0 none;
+  }
+}
+
+.flip__front {
+  @include transform-origin(100% 0);
+
+  .is-flipped & {
+    @include transform('rotateX(92deg) translateY(-50%)');
+  }
+}
+
+.flip__back {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 100%;
+  opacity: 0;
+  text-align: center;
+  background-color: #464646;
+  @include box-sizing();
+  @include transform('rotateX(-90deg) translateY(50%)');
+  @include transform-origin(0 100%);
+
+  .is-flipped & {
+    opacity: 1;
+    @include transform('rotateX(0deg)');
+  }
+}
+
+// Backup for no transforms
+.flip.no-transforms {
+  .flip__back {
+    display: none;
+  }
+
+  &.is-flipped {
+    .flip__back {
+      display: block;
+    }
+  }
+}
+
+.flip__extra {
+  display: inline;
+  position: relative;
+  padding: 2px 10px;
+  opacity: 0;
+  visibility: hidden;
+  overflow: visible;
+  white-space: nowrap;
+  z-index: 5;
+  top: 4px;
+  line-height: 34px;
+  @include transition(opacity 450ms cubic-bezier(0.57,.06,.05,.95));
+
+  .is-flipped + & {
+    opacity: 1;
+    visibility: visible;
+    @include transition(opacity 650ms cubic-bezier(0.57, 0.06, 0.05, 0.95) 750ms);
+  }
+}
+
+.flip__cart {
+  display: inline-block;
+  padding: 0 8px;
+}
+
+.flip__checkout {
+  margin: 0;
+}
+/*============================================================================
+  Ajaxify Modal
+==============================================================================*/
+.ajaxcart--modal {
+  position: absolute;
+  top: 170px;
+  left: -200%;
+  margin-left: -500px; // overridden with JS
+  width: 100%;
+  max-width: 760px;
+  height: auto;
+  z-index: 99999999;
+  visibility: hidden;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  @include transition('left 0s linear 700ms, box-shadow 600ms cubic-bezier(0.47, 0.5, 0, 0.95) 400ms, margin-top 200ms ease-in-out');
+
+  // Short screens
+  @media only screen and (max-height:645px) {
+    top: 70px;
+  }
+
+  // Medium-down screens
+  @include at-query ($max, $medium) {
+    max-width: 90%;
+  }
+
+  // Small screens
+  @include at-query ($max, $small) {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    margin: 0!important;
+    max-height: none;
+    max-width: none;
+  }
+
+  .ajaxcart__content {
+    padding-left: $gutter;
+    padding-right: $gutter;
+
+    // Medium-down screens
+    @include at-query ($max, $medium) {
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+
+    // Small screens
+    @include at-query ($max, $small) {
+      padding-bottom: 60px;
+      min-height: 100%;
+    }
+  }
+
+  &.is-visible {
+    visibility: visible;
+    left: 50%;
+    @include transition('left 0s linear, box-shadow 600ms cubic-bezier(0.47, 0.5, 0, 0.95) 400ms, margin-top 200ms ease-in-out');
+
+    // Large screens
+    @include at-query ($min, $large) {
+      box-shadow: 0px 10px 80px rgba(0,0,0,.25);
+    }
+
+    // Small screens
+    @include at-query ($max, $small) {
+      left: 0;
+    }
+  }
+
+  .ajaxcart__row {
+
+    & > div {
+      padding-left: 20px;
+
+      &:first-child {
+        padding-left: 0;
+      }
+    }
+  }
+
+  .ajaxcart__product {
+    @include transform(none);
+  }
+
+  .update-cart {
+    display: none!important;
+  }
+
+  // No transform fallback
+  &.no-transforms {
+    border: 1px solid $colorBorder;
+  }
+
+}
+
+.ajaxcart__overlay {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  visibility: hidden;
+  top: 0;
+  left: 0;
+  z-index: 99999998;
+  opacity: 0;
+  cursor: pointer;
+  @include transition(all 450ms cubic-bezier(0.57,.06,.05,.95));
+  @if (lightness( $colorBody ) > 40) {
+    background-color: #d3d3d3;
+  }
+  @else {
+    background-color: #333333;
+  }
+}
+
+@include at-query ($min, $postSmall) {
+  .is-visible ~ .ajaxcart__overlay {
+    visibility: visible;
+    @include transition(all 650ms cubic-bezier(0.57, 0.06, 0.05, 0.95));
+    @if (lightness( $colorBody ) > 40) {
+      opacity: 0.8;
+    }
+    @else {
+      opacity: 0.95;
+    }
+
+    .lt-ie9 & {
+      -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
+    }
+  }
+}
+
+// Modal content transition
+.ajaxcart--modal .ajaxcart__content {
+  @include transform(scale(0.9));
+  opacity: 0;
+}
+
+.ajaxcart--modal.is-visible .ajaxcart__content {
+  @include transform(scale(1));
+  opacity: 1;
+}
+
+// Quantity selector colors in the modal
+.ajaxcart--modal {
+
+  // Small screen quantity appearance
+  @include at-query ($max, $medium) {
+    input[type="text"] {
+      border-color: $colorBorder;
+    }
+
+    .ajaxcart__qty-adjust {
+      opacity: 1;
+    }
+  }
+}
+/*============================================================================
+  Ajaxify Drawer
+==============================================================================*/
+.ajaxcart--drawer {
+  height: 0px;
+  overflow: hidden;
+  border-bottom: 0px solid transparent;
+  @include perspective (1000px);
+  @include transform-style(preserve-3d);
+  @include transition(all 600ms cubic-bezier(0.47, 0.5, 0, 0.95));
+
+  &.is-visible {
+    @include transition(all 550ms cubic-bezier(0.47, 0, 0, 0.95));
+    border-bottom: 1px solid $colorBorder;
+  }
+
+  .update-cart {
+    display: none!important;
+  }
+
+  .ajaxcart__content {
+    margin: 0 auto;
+    opacity: 0;
+    overflow: hidden;
+    padding-top: $gutter;
+    padding-bottom: $gutter;
+    @include transform-origin(top);
+    @include transform('rotateX(-90deg)');
+  }
+
+  &.is-visible .ajaxcart__content {
+    opacity: 1;
+    @include transform('rotateX(0deg)');
+  }
+}
+
+.ajaxcart__caret {
+  position: relative;
+  display: block;
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+
+  .is-visible + & {
+    opacity: 1;
+    overflow: visible;
+  }
+
+  & > span {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    display: block;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid $colorBody;
+    margin-left: -6px;
+    opacity: 0;
+    @include transform(translate(0,-12px));
+    @include transition(all 0.25s ease-in-out 0.2s);
+  }
+
+  .is-visible + & > span {
+    @include transform(translate(0,0));
+    opacity: 1;
+  }
+}
+/*============================================================================
+  Sprites
+//   - using data URIs to prevent any additional http requests
+==============================================================================*/
+.sprite {
+  display: block;
+  text-indent: -9999px;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}
+
+.ajaxcart__close {
+  @extend .sprite;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  opacity: 0;
+  visibility: hidden;
+  border: 0 none;
+  width: 30px;
+  height: 25px;
+  cursor: pointer;
+  background: {
+    color: transparent;
+    position: center center;
+    image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAALCAYAAACprHcmAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyNpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChNYWNpbnRvc2gpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOkMzRUY2REVBNDY1QjExRTM4ODdCODU0OEQ4MDA1MjgwIiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOkMzRUY2REVCNDY1QjExRTM4ODdCODU0OEQ4MDA1MjgwIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6QzNFRjZERTg0NjVCMTFFMzg4N0I4NTQ4RDgwMDUyODAiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6QzNFRjZERTk0NjVCMTFFMzg4N0I4NTQ4RDgwMDUyODAiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz7sdZ8fAAAAp0lEQVR42nSPQQ6CMBBFx4ZEj+DSY8BGt9SVwRP1QBDdULeygaN4BFzpn+Q3mZCW5DFk/uvQ2YUQfiIygYuUnzc4O7wW/QCxIEbmi8oNG23mgO03js0reDF4gCNry77mUpkpHvSgo7QHA7gnwW1+q8FKcbViTtbJB/Bl7Uty5BWe4MTa2aWTPJplbuDDmpYe04IzqBn4zbU8J2udHcUpI9oDmtd/AQYAX20mtnhTCxQAAAAASUVORK5CYII=)
+  }
+  z-index: 999999999;
+  @include transition(all 450ms cubic-bezier(0.57,.06,.05,.95));
+
+  .is-visible & {
+    opacity: 0.8;
+    visibility: visible;
+    @include transition(opacity 650ms cubic-bezier(0.57, 0.06, 0.05, 0.95) 200ms);
+  }
+
+  &:hover {
+    opacity: 1;
+  }
+}
+/*============================================================================
+  #General Variables
+==============================================================================*/
+// Timber Colors
+$colorBody: {{ settings.color_body_bg }};
+$colorBorder: {{ settings.color_borders }};
+
+// Gift Card Colors
+$colorGiftText: #999; // note, this is always on a white background
+$colorGiftBorder: {{ settings.color_primary }};
+
+// Sizes
+$gutter: 30px;
+/*============================================================================
+  #Sass Mixins
+    - Copied from timber.scss.liquid
+==============================================================================*/
+.clearfix {
+  &:after {
+    content: "";
+    display: table;
+    clear: both; }
+  *zoom: 1;
+}
+
+@mixin clearfix() {
+  &:after {
+    content: "";
+    display: table;
+    clear: both; }
+  *zoom: 1;
+}
+
+@mixin prefix($property, $value) {
+  -webkit-#{$property}: #{$value};
+  -moz-#{$property}: #{$value};
+  -ms-#{$property}: #{$value};
+  -o-#{$property}: #{$value};
+  #{$property}: #{$value};
+}
+
+/*============================================================================
+  #Base Styles
+==============================================================================*/
+.template-giftcard,
+.template-giftcard body {
+  background: $colorBody;
+
+  a {
+    text-decoration: none;
+  }
+}
+
+.template-giftcard .wrapper {
+  max-width: 588px;
+
+  img, object, iframe {
+    max-width: 100%;
+  }
+}
+
+.giftcard-header {
+  padding: ($gutter * 2) 0;
+  font-size: 1em;
+  text-align: center;
+  -webkit-animation: fadein 0.5s ease-in-out both 0.4s;
+  animation: fadein 0.5s ease-in-out both 0.4s;
+}
+
+.shop-url {
+  display: none;
+}
+
+.giftcard {
+  -webkit-animation: slideup 0.8s ease-in-out;
+  animation: slideup 0.8s ease-in-out
+}
+
+.giftcard__border {
+  background-color: $colorGiftBorder;
+  border-radius: 4px;
+  border: 1px solid darken($colorGiftBorder, 5%);
+  padding: 1em;
+  -webkit-animation: container-slide 0.8s ease-in-out;
+  animation: container-slide 0.8s ease-in-out
+}
+
+.giftcard__content {
+  @include clearfix;
+  background-color: #fff;
+  color: $colorGiftText;
+  border: 1px solid darken($colorGiftBorder, 5%);
+  border-radius: 3px;
+  -webkit-animation: cardslide 0.8s ease-in-out;
+  animation: cardslide 0.8s ease-in-out;
+}
+
+.giftcard__header {
+  @include clearfix;
+  border-bottom: 1px solid $colorBorder;
+  padding: $gutter / 2;
+}
+
+.giftcard__title {
+  float: left;
+  margin-bottom: 0;
+}
+
+.giftcard__tag {
+  display: block;
+  float: right;
+  background-color: lighten($colorGiftText, 10%);
+  border: 1px solid transparent;
+  color: #fff;
+  padding: $gutter / 3;
+  border-radius: 4px;
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  line-height: 1;
+}
+
+.giftcard__tag--active {
+  background: transparent;
+  color: $colorGiftText;
+  border: 1px solid lighten($colorGiftText, 20%);
+}
+
+.giftcard__wrap {
+  position: relative;
+  margin: ($gutter / 2) ($gutter / 2) $gutter;
+
+  img {
+    position: relative;
+    display: block;
+    border-radius: 10px;
+    z-index: 2;
+  }
+
+  &:before,
+  &:after {
+    content: "";
+    position: absolute;
+    width: 47px;
+    height: 47px;
+    z-index: 3;
+  }
+
+  &:before {
+    background: url('//cdn.shopify.com/s/assets/gift-card/corner-top-left-2ba3edcd9e97ba146cd01a8161365c5e.svg') 0 0 no-repeat;
+    top: -1px;
+    left: -1px;
+  }
+
+  &:after {
+    background: url('//cdn.shopify.com/s/assets/gift-card/corner-bottom-right-1fb9bf49ff9564325e6b7c0fb0a7ff45.svg') 0 0 no-repeat;
+    bottom: -1px;
+    right: -1px;
+  }
+
+  .lt-ie9 &:before,
+  .lt-ie9 &:after {
+    display: none;
+  }
+}
+
+.giftcard__code {
+  position: absolute;
+  bottom: $gutter;
+  text-align: center;
+  width: 100%;
+  z-index: 50;
+}
+
+.giftcard__code--medium {
+  font-size: .875em;
+}
+
+.giftcard__code--small {
+  font-size: .75em;
+}
+
+.giftcard__code__inner {
+  display: inline-block;
+  vertical-align: baseline;
+  background-color: #fff;
+  padding: .5em;
+  border-radius: 4px;
+  max-width: 450px;
+  -webkit-box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+
+  .giftcard__code--small & {
+    overflow: auto;
+  }
+}
+
+.giftcard__code__text {
+  font-weight: 400;
+  font-size: 1.875em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  border: 1px dashed $colorBorder;
+  padding: .4em .5em;
+  display: inline-block;
+  vertical-align: baseline;
+  color: #777;
+  line-height: 1;
+
+  .disabled & {
+    color: #999;
+    text-decoration: line-through;
+  }
+}
+
+.giftcard__amount {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: #fff;
+  font-size: 2.75em;
+  line-height: 1.2;
+  padding: $gutter / 2;
+  z-index: 50;
+
+  strong {
+    display: block;
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+  }
+}
+
+.giftcard__amount--medium {
+  font-size: 2em;
+}
+
+.tooltip {
+  display: block;
+  position: absolute;
+  top: -50%;
+  right: 50%;
+  margin-top: 16px;
+  z-index: 3;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  -webkit-animation: popup 0.5s ease-in-out both 0.7s;
+  animation: popup 0.5s ease-in-out both 0.7s;
+
+  &:before {
+    content: "";
+    display: block;
+    position: absolute;
+    left: 100%;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    margin-left: -5px;
+    margin-bottom: -5px;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 5px solid #333;
+    border-top: 5px solid rgba(51,51,51,0.9);
+  }
+}
+
+.tooltip__label {
+  display: block;
+  position: relative;
+  right: -50%;
+  border: none;
+  border-radius: 4px;
+  background: #333;
+  background: rgba(51,51,51,0.9);
+  min-height: 14px;
+  font-weight: 400;
+  font-size: 12px;
+  text-decoration: none;
+  line-height: 16px;
+  text-shadow: none;
+  padding: .5em .75em;
+  margin-left: .25em;
+
+  small {
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: #b3b3b3;
+    font-size: .875em;
+  }
+}
+
+.giftcard__instructions {
+  text-align: center;
+  margin: 0 ($gutter / 2) $gutter;
+}
+
+.giftcard__actions {
+  position: relative;
+  border-top: 1px solid $colorBorder;
+  padding: $gutter ($gutter / 2);
+  text-align: center;
+  overflow: hidden;
+}
+
+.action-link {
+  position: absolute;
+  left: $gutter / 2;
+  top: 50%;
+  font-size: 0.875em;
+  font-weight: bold;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: .2em;
+  color: lighten($colorGiftText, 10%);
+  margin-top: -10px;
+
+  &:hover,
+  &:focus {
+    color: $colorGiftText;
+  }
+}
+
+.action-link__print {
+  display: inline-block;
+  vertical-align: baseline;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  margin-right: 5px;
+  opacity: 0.25;
+  background: {
+    image: url('//cdn.shopify.com/s/assets/gift-card/icon-print-164daa1ae32d10d1f9b83ac21b6f2c70.png');
+    repeat: no-repeat;
+    position: 0 0;
+  }
+
+  .svg & {
+    background-image: url('//cdn.shopify.com/s/assets/gift-card/icon-print-6a10b2fb86d223b8c783c9696eaf4c31.svg');
+  }
+
+  .action-link:hover & {
+    opacity: 0.4;
+  }
+}
+
+.giftcard__footer {
+  text-align: center;
+  padding: ($gutter * 2) 0;
+  -webkit-animation: fadein 0.5s ease-in-out both 0.4s;
+  animation: fadein 0.5s ease-in-out both 0.4s
+}
+
+.giftcard__icon {
+  display: inline-block;
+  vertical-align: baseline;
+}
+
+#qr-code {
+  display: none;
+
+  img {
+    padding: $gutter;
+    border: 1px solid $colorBorder;
+    border-radius: 4px;
+    margin: 0 auto $gutter;
+  }
+}
+/*============================================================================
+  #Media Queries
+==============================================================================*/
+
+/*================ Medium-down width ================*/
+@media screen and (max-width: 580px) {
+  .giftcard {
+    font-size: 12px;
+  }
+
+  .giftcard-header {
+    padding: $gutter 0;
+  }
+
+  .header-logo {
+    font-size: 2em;
+  }
+
+  .giftcard__border {
+    padding: $gutter / 2;
+  }
+
+  .giftcard__actions {
+    padding: $gutter / 2;
+  }
+
+  .giftcard__actions .btn {
+    width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .action-link {
+    display: none;
+  }
+}
+
+/*================ Small width ================*/
+@media screen and (max-width: 400px) {
+  .giftcard__amount strong {
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+  }
+
+  .giftcard__wrap:before,
+  .giftcard__wrap:after {
+    display: none;
+  }
+
+  .giftcard__code {
+    font-size: .75em;
+  }
+
+  .giftcard__code--medium {
+    font-size: .65em;
+  }
+
+  .giftcard__code--small {
+    font-size: .55em;
+  }
+}
+
+
+/*================ Small height ================*/
+@media screen and (max-height: 800px) {
+  .header-logo img {
+    max-height: 90px;
+  }
+}
+/*============================================================================
+  #Print Styles
+==============================================================================*/
+@media print {
+  @page {
+    margin: 0.5cm;
+  }
+
+  p, h2, h3 {
+    orphans: 3;
+    widows: 3;
+  }
+
+  h2, h3 {
+    page-break-after: avoid;
+  }
+
+  html, body {
+    -webkit-text-size-adjust: 100%;
+    -webkit-print-color-adjust: exact;
+    background-color: #fff;
+  }
+
+  .giftcard-header {
+    padding: 10px 0;
+  }
+
+  .giftcard__content,
+  .giftcard__border {
+    border: 0 none;
+    padding: 0;
+    background-color: #fff;
+  }
+
+  .giftcard__actions,
+  .giftcard__wrap:before,
+  .giftcard__wrap:after,
+  .tooltip {
+    display: none;
+  }
+
+  .giftcard__title {
+    float: none;
+    text-align: center;
+  }
+
+  .giftcard__code__text {
+    color: #555;
+  }
+
+  .shop-url {
+    display: block;
+  }
+
+  .logo {
+    color: #58686F;
+  }
+
+  #qr-code {
+    display: block;
+  }
+}
+/*============================================================================
+  #Keyframe Animations
+==============================================================================*/
+@-webkit-keyframes slideup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(2000px) rotate(10deg)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-30px)
+  }
+
+  80% {
+    -webkit-transform: translateY(10px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0) rotate(0deg)
+  }
+}
+
+@-ms-keyframes slideup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(2000px) rotate(10deg)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-30px)
+  }
+
+  80% {
+    -webkit-transform: translateY(10px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0) rotate(0deg)
+  }
+}
+
+@keyframes slideup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(2000px) rotate(10deg)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-30px)
+  }
+
+  80% {
+    -webkit-transform: translateY(10px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0) rotate(0deg)
+  }
+}
+
+@-webkit-keyframes popup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(30px)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-10px)
+  }
+
+  80% {
+    -webkit-transform: translateY(2px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0)
+  }
+}
+
+@-ms-keyframes popup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(30px)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-10px)
+  }
+
+  80% {
+    -webkit-transform: translateY(2px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0)
+  }
+}
+
+@keyframes popup {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(30px)
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: translateY(-10px)
+  }
+
+  80% {
+    -webkit-transform: translateY(2px)
+  }
+
+  100% {
+    -webkit-transform: translateY(0)
+  }
+}
+
+@-webkit-keyframes container-slide {
+  0% {
+    opacity: 0;
+    -webkit-transform: rotate(0deg)
+  }
+
+  100% {
+    -webkit-transform: rotate(0deg)
+  }
+}
+
+@-ms-keyframes container-slide {
+  0% {
+    opacity: 0;
+    -webkit-transform: rotate(0deg)
+  }
+
+  100% {
+    -webkit-transform: rotate(0deg)
+  }
+}
+
+@keyframes container-slide {
+  0% {
+    opacity: 0;
+    -webkit-transform: rotate(0deg)
+  }
+
+  100% {
+    -webkit-transform: rotate(0deg)
+  }
+}
+
+@-webkit-keyframes fadein {
+  0% {
+    opacity: 0
+  }
+
+  100% {
+    opacity: 100
+  }
+}
+
+@-ms-keyframes fadein {
+  0% {
+    opacity: 0
+  }
+
+  100% {
+    opacity: 100
+  }
+}
+
+@keyframes fadein {
+  0% {
+    opacity: 0
+  }
+
+  100% {
+    opacity: 100
+  }
+}
+/*================ Theme-specific partials ================*/
+h1 {
+  font-size: em(28px);
+}
+
+h2 {
+  font-size: em(26px);
+}
+
+h3 {
+  font-size: em(18px);
+}
+
+h4,
+.breadcrumb,
+.tags {
+  font-size: em(15px);
+  line-height: 1.4;
+}
+
+h4 {
+  text-transform: uppercase;
+}
+
+h5,
+h6 {
+  font-size: em(14px);
+}
+
+.h1 { @extend h1; }
+.h2 { @extend h2; }
+.h3 { @extend h3; }
+.h4 { @extend h4; }
+.h5 { @extend h5; }
+.h6 { @extend h6; }
+
+body {
+  display: none;
+}
+@import 'partials/partials'

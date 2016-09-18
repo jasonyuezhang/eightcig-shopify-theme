@@ -10,13 +10,23 @@
     ],
     "feature-detects": []
   },
-  "buildRoot": "./",
+  "buildRoot": "./theme",
+  "assetsRoot": "./theme/assets",
   "srcRoot": "./src",
-  "cssRoot": "/scss",
-  "scriptRoot": "/scripts",
+  "scssRoot": "./src/scss",
+  "scriptRoot": "./src/scripts",
   "cssExt": ["*.css", "*.scss", "*.scss.liquid"],
   "cssVendor": [
     "node_modules/normalize.css/normalize.css"
   ],
-  "shopifyUrl": "https://eightcig-2.myshopify.com/?key=c7f6d0a41984770aaa3fbcd4d711becf86423657e548515fa2a009b0ed7c25c7"
+  "shopify": {
+    "api_key": "3a767a6f1903e1c5f30ab4748d49bf06",
+    "password": "9e875a1eaea506c293b2d66ad034a3c5",
+    "store": "eightcig-2.myshopify.com",
+    "theme_id": 155004999,
+    "reload_url": "https://eightcig-2.myshopify.com/?key=c7f6d0a41984770aaa3fbcd4d711becf86423657e548515fa2a009b0ed7c25c7",
+    "options": {
+      "basePath": "./theme/"
+    }
+  }
 }

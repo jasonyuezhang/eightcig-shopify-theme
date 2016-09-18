@@ -20,12 +20,11 @@ var fs                 = require('fs'),
     gulp               = require('gulp'),
     gutil              = require('gulp-util'),
     concat             = require('gulp-concat'),
-    browserSync        = require('browser-sync').create(),
     uglify             = require('gulp-uglify'),
-    postcss            = require('gulp-postcss'),
-    assets             = require('postcss-assets'),
+    shell              = require('gulp-shell'),
+    filter             = require('gulp-filter'),
+    shopifyUpload      = require('gulp-shopify-upload'),
     autoprefixer       = require('autoprefixer'),
-    cssnano            = require('cssnano'),
     file               = require('gulp-file'),
     modernizr          = require('modernizr'),
     notify             = require('gulp-notify'),
@@ -38,11 +37,18 @@ var fs                 = require('fs'),
     ProgressBarPlugin  = require('progress-bar-webpack-plugin'),
     bump               = require('gulp-bump'),
     jeditor            = require('gulp-json-editor'),
-    toJson             = require('gulp-to-json'),
-    shell              = require('gulp-shell'),
-    filter             = require('gulp-filter'),
     rename             = require('gulp-rename'),
     moment             = require('moment'),
+
+    // stylesheets related
+    bourbon            = require('node-bourbon'),
+    assets             = require('postcss-assets'),
+    cssnano            = require('cssnano'),
+    shopifySass        = require('gulp-shopify-sass'),
+    postcss            = require('gulp-postcss'),
+
+    // Automatic broswer refresh
+    browserSync        = require('browser-sync').create(),
 
     // get configuration
     config           = require('./config.json'),
@@ -66,10 +72,20 @@ var fs                 = require('fs'),
  */
 
 var SRC_DIR             = config.srcRoot,
-    CSS_DIR             = SRC_DIR + config.cssRoot,
-    SCRIPT_DIR          = SRC_DIR + config.scriptRoot,
+    SCSS_DIR            = config.scssRoot,
+    SCRIPT_DIR          = config.scriptRoot,
     BUILD_DIR           = config.buildRoot,
+    ASSETS_DIR          = config.assetsRoot,
+
     AUTO_PREFIXER_RULES = ['last 2 versions'];
+
+/**
+ *
+ *   Shopify config
+ *
+ */
+
+var shopifyConfig = config.shopify;
 
 /**
  *
@@ -89,7 +105,7 @@ var TASK_NOTIFICATION = false,
  */
 
 myConfig.output = {
-    path: BUILD_DIR + 'assets',
+    path: ASSETS_DIR,
     publicPath: 'assets/', // not using
     filename: '[name].js.liquid'
 };
@@ -113,7 +129,7 @@ if (argv.dist) {
 
 gulp.task('browser-sync', function () {
     browserSync.init({
-        proxy: shopifyUrl,
+        proxy: shopifyConfig.reload_url,
         browser: 'google chrome',
         injectChanges: false // cause of css being served from cdn
     });
@@ -166,15 +182,15 @@ gulp.task('_version-bump', function () {
 
 gulp.task('_clean', function () {
     return del([
-        BUILD_DIR + 'assets/*.js',
-        BUILD_DIR + 'assets/*.js.liquid',
-        BUILD_DIR + 'assets/*.scss',
-        BUILD_DIR + 'assets/*.scss.liquid',
-        BUILD_DIR + 'config/*.json',
-        BUILD_DIR + 'layout/**/*.liquid',
-        BUILD_DIR + 'locales/*.json',
-        BUILD_DIR + 'snippets/**/*.liquid',
-        BUILD_DIR + 'templates/**/*.liquid'
+        path.join(ASSETS_DIR, '*.js'),
+        path.join(ASSETS_DIR, '*.js.liquid'),
+        path.join(ASSETS_DIR, '*.scss'),
+        path.join(ASSETS_DIR, '*.scss.liquid'),
+        path.join(BUILD_DIR, 'config/*.json'),
+        path.join(BUILD_DIR, 'layout/**/*.liquid'),
+        path.join(BUILD_DIR, 'locales/*.json'),
+        path.join(BUILD_DIR, 'snippets/**/*.liquid'),
+        path.join(BUILD_DIR, 'templates/**/*.liquid')
     ], { force: true });
 });
 
@@ -184,82 +200,16 @@ gulp.task('_clean', function () {
  *
  */
 
-function noSubdir(dir) {
-    return fs.readdirSync(dir).every(function(file) {
-        return !fs.statSync(path.join(dir, file)).isDirectory();
-    });
-}
-
-// pseudo code
-//
-// getCSSOrder(path)
-//     if order.json exist at current path
-//         order = order
-//     else
-//         order = all files/folders in current path
-//     endif
-//
-//     for path in order
-//         if path is directory
-//             subOrder = getCSSOrder(path)
-//             firstHalf = order.slice(0, index)
-//             secondHalf = order.slice(index + 1, order.length)
-//             firstHalf.concat(subOrder.concat(secondHalf))
-//
-//     return order
-//
-
-function iterateSubDir(dir, order) {
-    var subDir,
-        subOrder;
-
-    for (var i = 0; i < order.length; i++) {
-        var file = order[i],
-            subDir = path.join(__dirname, dir, file);
-
-        if (fs.statSync(subDir).isDirectory()) {
-            subOrder = getCSSOrder(path.join(dir, file));
-            order = order.slice(0, i).concat(
-                subOrder.concat(
-                    order.slice(i + 1, order.length)
-                )
-            );
-            i += subOrder.length - 1;
-        } else {
-            order[i] = subDir;
-        }
-    }
-
-    return order;
-}
-
-function getCSSOrder (dir) {
-    var orderConfigPath = path.join(__dirname, dir, cssOrderConfig),
-        adjust = 0,
-        order;
-
-    try {
-        fs.accessSync(orderConfigPath, fs.F_OK);
-        order = iterateSubDir(dir, require(orderConfigPath));
-    } catch (e) {
-        if (noSubdir(dir)) {
-            order = cssExt.map(function (ext) { return path.join(__dirname, dir ,'/**/', ext); });
-        } else {
-            order = iterateSubDir(dir, fs.readdirSync(dir).filter(junk.not));
-        }
-    }
-
-    return order
+var upload = function upload () {
+    return shopifyUpload(shopifyConfig.api_key, shopifyConfig.password, shopifyConfig.store, shopifyConfig.theme_id, shopifyConfig.options);
 }
 
 // Build main css
 gulp.task('_css-build', function () {
-    cssOrder = getCSSOrder(CSS_DIR);
-
-    return gulp.src(cssOrder)
-        .pipe(concat('styles.scss.liquid'))
-        .pipe(gulp.dest(BUILD_DIR + 'assets/'))
-        .pipe(shell(['theme upload assets/styles.scss.liquid']))
+    return gulp.src(path.join(__dirname, SCSS_DIR, 'styles.scss'))
+        .pipe(shopifySass())
+        .pipe(gulp.dest(ASSETS_DIR))
+        .pipe(upload())
         .pipe(gulpif(LIVE_RELOAD, browserSync.stream()))
         .pipe(gulpif(TASK_NOTIFICATION, notify({ message: 'CSS build completed.', onLast: true })));
 });
@@ -285,8 +235,7 @@ gulp.task('_css-vendor-build', function () {
                 ])
             )
         )
-        .pipe(gulp.dest(BUILD_DIR + 'assets/'))
-        .pipe(shell(['theme upload assets/vender.css']))
+        .pipe(gulp.dest(ASSETS_DIR))
         .pipe(gulpif(LIVE_RELOAD, browserSync.stream()))
         .pipe(gulpif(TASK_NOTIFICATION, notify({ message: 'Vendor CSS build completed.', onLast: true })));
 });
@@ -384,16 +333,7 @@ gulp.task('_file-copy', function () {
     return gulp.src(['src/**/*.liquid', 'src/**/*.json', '!src/scss/**/*.*', '!src/scripts/**/*.*'])
         .pipe(changed(BUILD_DIR))
         .pipe(gulp.dest(BUILD_DIR))
-        .pipe(shell([
-            'theme upload <%= f(file.path) %>'
-        ], {
-            templateData: {
-                f: function (s) {
-                    // cut away absolute path of working dir for 'theme' cmd to work
-                    return s.replace(process.cwd() + '/', '')
-                }
-            }
-        }))
+        .pipe(upload())
         .pipe(gulpif(LIVE_RELOAD, browserSync.stream()))
         .pipe(gulpif(TASK_NOTIFICATION, notify({ message: 'Files copy completed.', onLast: true })));
 });
@@ -401,17 +341,7 @@ gulp.task('_file-copy', function () {
 gulp.task('_modernizr-build', ['_modernizr-generate'], function () {
     return file('modernizr.js', MODERNIZR_LIB, { src: true })
         .pipe(gulpif(argv.dist, uglify()))
-        .pipe(gulp.dest(BUILD_DIR + 'assets/'))
-        .pipe(shell([
-            'theme upload <%= f(file.path) %>'
-        ], {
-            templateData: {
-                f: function (s) {
-                    // cut away absolute path of working dir for 'theme' cmd to work
-                    return s.replace(process.cwd() + '/', '')
-                }
-            }
-        }));
+        .pipe(gulp.dest(ASSETS_DIR));
 });
 
 // Copy root files
@@ -419,16 +349,7 @@ gulp.task('_root-files-copy', function () {
     return gulp.src(rootFiles)
         .pipe(changed(BUILD_DIR))
         .pipe(gulp.dest(BUILD_DIR))
-        .pipe(shell([
-            'theme upload <%= f(file.path) %>'
-        ], {
-            templateData: {
-                f: function (s) {
-                    // cut away absolute path of working dir for 'theme' cmd to work
-                    return s.replace(process.cwd() + '/', '')
-                }
-            }
-        }))
+        .pipe(upload())
         .pipe(gulpif(LIVE_RELOAD, browserSync.stream()))
         .pipe(gulpif(TASK_NOTIFICATION, notify({ message: 'Root files copy completed.', onLast: true })));
 });
